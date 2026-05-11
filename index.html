@@ -146,6 +146,12 @@
       padding: 8px; margin: 8px 0; font-size: 10px; max-height: 80px; overflow-y: auto;
       font-family: monospace; color: #88ff88; text-align: left; display: none;
     }
+    
+    .loading-indicator {
+      display: none; padding: 10px; background: rgba(255,255,0,0.2);
+      border: 1px solid yellow; border-radius: 10px; margin: 10px 0;
+      color: yellow; font-size: 12px;
+    }
   </style>
 </head>
 <body>
@@ -158,10 +164,11 @@
 <div id="game">
   <div id="title">
     <div class="title-glow">🍄 TRIPPY SHROOMZ · POLYGON 🍄</div>
-    <div class="title-sub">/// WEB3 · WALLET FIXED ///</div>
+    <div class="title-sub">/// WEB3 · NO ETHERS DEPENDENCY ///</div>
   </div>
   
   <div id="connectionLog"></div>
+  <div class="loading-indicator" id="loadingIndicator">⏳ Loading Web3 library...</div>
   
   <div class="wallet-info" id="walletInfo" style="display:none;">
     <span>👛 <span id="walletAddress">Not connected</span></span>
@@ -216,9 +223,52 @@
   <div class="save-indicator" id="saveIndicator">💾 game auto‑saves</div>
 </div>
 
+<!-- Multiple Ethers.js CDN fallbacks -->
 <script>
-  // ============ SIMPLIFIED WALLET CONNECTION ============
-  (function(){
+  // Load Ethers.js with fallback CDNs
+  (function loadEthers() {
+    const cdns = [
+      'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js',
+      'https://unpkg.com/ethers@5.7.2/dist/ethers.umd.min.js',
+      'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js'
+    ];
+    
+    let loaded = false;
+    const loadingEl = document.getElementById('loadingIndicator');
+    if (loadingEl) loadingEl.style.display = 'block';
+    
+    function tryLoad(index) {
+      if (index >= cdns.length) {
+        console.error('All Ethers CDNs failed');
+        if (loadingEl) loadingEl.textContent = '❌ Failed to load Web3 library. Please refresh.';
+        return;
+      }
+      
+      const script = document.createElement('script');
+      script.src = cdns[index];
+      script.onload = () => {
+        console.log('Ethers loaded from:', cdns[index]);
+        loaded = true;
+        if (loadingEl) loadingEl.style.display = 'none';
+        // Initialize game after ethers is loaded
+        if (typeof ethers !== 'undefined') {
+          initGame();
+        }
+      };
+      script.onerror = () => {
+        console.warn('Failed to load from:', cdns[index]);
+        tryLoad(index + 1);
+      };
+      document.head.appendChild(script);
+    }
+    
+    tryLoad(0);
+  })();
+</script>
+
+<script>
+  // ============ GAME INITIALIZATION (runs after ethers loads) ============
+  function initGame() {
     "use strict";
 
     const POLYGON_CHAIN_ID = 137;
@@ -278,14 +328,13 @@
       }
     }
 
-    // ============ WALLET CONNECTION - SIMPLIFIED ============
+    // ============ WALLET CONNECTION - NO ETHERS DEPENDENCY FOR BASICS ============
     async function connectWallet() {
       log('🔍 Starting wallet connection...');
       
-      // Clear previous logs
       if (el.connectionLog) el.connectionLog.innerHTML = '';
       
-      // STEP 1: Find the provider
+      // Find provider
       let ethereum = null;
       
       if (window.ethereum) {
@@ -304,51 +353,50 @@
       }
       
       // Log provider details
-      log(`Provider: ${ethereum.constructor?.name || 'Unknown'}`);
       log(`isMetaMask: ${ethereum.isMetaMask}`);
       log(`isTrust: ${ethereum.isTrust}`);
       log(`isTrustWallet: ${ethereum.isTrustWallet}`);
       
       try {
-        // STEP 2: Request accounts
+        // Request accounts
         log('📝 Requesting accounts...');
         
         let accounts;
         
-        // Try different methods
         if (ethereum.request) {
-          log('Using ethereum.request method');
+          log('Using ethereum.request');
           accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         } else if (ethereum.enable) {
-          log('Using legacy ethereum.enable method');
+          log('Using ethereum.enable');
           accounts = await ethereum.enable();
         } else if (ethereum.send) {
-          log('Using ethereum.send method');
+          log('Using ethereum.send');
           accounts = await ethereum.send('eth_requestAccounts');
         } else {
           throw new Error('No method to request accounts');
         }
         
-        log(`Accounts received: ${accounts?.length || 0}`);
+        log(`Accounts: ${accounts?.length || 0}`);
         
         if (!accounts || accounts.length === 0) {
-          throw new Error('No accounts returned');
+          throw new Error('No accounts');
         }
         
         userAddress = accounts[0];
         log(`✅ Connected: ${userAddress.substring(0, 10)}...`);
         
-        // STEP 3: Create ethers provider
+        // Create ethers provider (now ethers is guaranteed to be loaded)
+        log('Creating ethers provider...');
         provider = new ethers.providers.Web3Provider(ethereum);
         signer = provider.getSigner();
         log('✅ Ethers provider created');
         
-        // STEP 4: Check network
+        // Check network
         const network = await provider.getNetwork();
-        log(`Network: ${network.name} (chainId: ${network.chainId})`);
+        log(`Network: ${network.name} (${network.chainId})`);
         
         if (network.chainId !== POLYGON_CHAIN_ID) {
-          log('⚠️ Not on Polygon, switching...');
+          log('⚠️ Switching to Polygon...');
           try {
             await ethereum.request({
               method: 'wallet_switchEthereumChain',
@@ -356,7 +404,6 @@
             });
             log('✅ Switched to Polygon');
           } catch (switchError) {
-            log(`Switch error: ${switchError.message}`);
             if (switchError.code === 4902) {
               await ethereum.request({
                 method: 'wallet_addEthereumChain',
@@ -368,12 +415,12 @@
                   blockExplorerUrls: ['https://polygonscan.com/']
                 }]
               });
-              log('✅ Added Polygon network');
+              log('✅ Added Polygon');
             }
           }
         }
         
-        // STEP 5: Get balance
+        // Get balance
         await updateBalance();
         
         // Update UI
@@ -383,11 +430,10 @@
         el.connectWalletBtn.style.background = 'linear-gradient(135deg, #00aa44, #006622)';
         el.networkBadge.textContent = '⛓️ Polygon';
         
-        log('🎉 Wallet connected successfully!');
+        log('🎉 Success!');
         
-        // Listen for changes
+        // Listeners
         ethereum.on('accountsChanged', (newAccounts) => {
-          log('🔄 Account changed');
           if (newAccounts.length === 0) {
             disconnectWallet();
           } else {
@@ -398,17 +444,14 @@
           }
         });
         
-        ethereum.on('chainChanged', () => {
-          log('🔄 Chain changed, reloading...');
-          window.location.reload();
-        });
+        ethereum.on('chainChanged', () => window.location.reload());
         
         render();
         
       } catch (error) {
-        log(`❌ Connection failed: ${error.message}`);
-        console.error('Full error:', error);
-        alert(`❌ Connection failed: ${error.message}\n\nPlease try again or check if wallet is unlocked.`);
+        log(`❌ Error: ${error.message}`);
+        console.error(error);
+        alert(`❌ Connection failed: ${error.message}`);
       }
     }
 
@@ -423,7 +466,6 @@
       el.connectWalletBtn.textContent = '🔌 Connect Wallet';
       el.connectWalletBtn.style.background = 'linear-gradient(135deg, #7B3FE4, #4A90E2)';
       el.networkBadge.textContent = '⛓️ Polygon';
-      log('🔌 Wallet disconnected');
       render();
     }
 
@@ -441,7 +483,7 @@
     // ============ PAYMENT ============
     async function sendPayment(amountInMatic = '0.01') {
       if (!signer) {
-        alert('❌ Please connect your wallet first!');
+        alert('❌ Connect wallet first!');
         return false;
       }
       try {
@@ -449,13 +491,13 @@
           to: PAYMENT_ADDRESS,
           value: ethers.utils.parseEther(amountInMatic)
         });
-        alert(`✅ Payment sent! TX: ${tx.hash.substring(0, 10)}...`);
+        alert(`✅ Sent! TX: ${tx.hash.substring(0, 10)}...`);
         await tx.wait();
         grantPremiumBenefits();
         return true;
       } catch (error) {
-        console.error('Payment error:', error);
-        alert('❌ Payment failed: ' + (error.message || 'Unknown error'));
+        console.error(error);
+        alert('❌ Failed: ' + error.message);
         return false;
       }
     }
@@ -464,23 +506,24 @@
       perClick += 5;
       autoRate += 2;
       spores += 10000;
-      alert('🎉 Premium activated! +5 Power, +2 Auto, +10K Spores');
+      alert('🎉 Premium! +5 Power, +2 Auto, +10K Spores');
       saveGame();
       render();
     }
 
     // ============ GAME FUNCTIONS ============
-    const SAVE_KEY = 'trippyShroomzSave_v8';
+    const SAVE_KEY = 'trippyShroomzSave_v9';
     
     function saveGame() {
-      const saveData = {
-        spores, shrooms, perClick, autoRate, shroomCost,
-        upgrades: {
-          click: { cost: upgrades.click.cost, owned: upgrades.click.owned },
-          auto: { cost: upgrades.auto.cost, owned: upgrades.auto.owned }
-        }
-      };
-      try { localStorage.setItem(SAVE_KEY, JSON.stringify(saveData)); } catch(e) {}
+      try { 
+        localStorage.setItem(SAVE_KEY, JSON.stringify({
+          spores, shrooms, perClick, autoRate, shroomCost,
+          upgrades: {
+            click: { cost: upgrades.click.cost, owned: upgrades.click.owned },
+            auto: { cost: upgrades.auto.cost, owned: upgrades.auto.owned }
+          }
+        })); 
+      } catch(e) {}
       if (el.saveIndicator) {
         el.saveIndicator.style.opacity = '1';
         setTimeout(() => el.saveIndicator.style.opacity = '0.7', 200);
@@ -612,10 +655,10 @@
     }
 
     let chatMessages = [
-      { user: "🍄 ShroomBot", text: "Welcome to Web3 Trip! ✨", isBot: true, timestamp: Date.now() - 30000 },
-      { user: "CosmicWanderer", text: "anyone seeing colors? 🌈", isBot: false, timestamp: Date.now() - 15000 }
+      { user: "🍄 ShroomBot", text: "Welcome! ✨", isBot: true, timestamp: Date.now() - 30000 },
+      { user: "CosmicWanderer", text: "colors! 🌈", isBot: false, timestamp: Date.now() - 15000 }
     ];
-    const botReplies = ["the mushrooms speak 🍄","vibe check ✅","max power! 💪","polygon fast ⚡","fractals!","multiplier!","max buy 🔥","hypnotic","web3 gaming 🚀","trust wallet!"];
+    const botReplies = ["🍄","vibe ✅","power! 💪","fast ⚡","fractals!","multiplier!","🔥","hypnotic","🚀","wallet!"];
     
     function addChatMessage(user, text, isBot = false) {
       chatMessages.push({ user, text, isBot, timestamp: Date.now() });
@@ -630,7 +673,7 @@
         const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         html += `<div class="chat-message"><span class="chat-time">${timeStr}</span><span class="${msg.isBot ? 'chat-bot' : 'chat-user'}">${msg.user}:</span> ${msg.text}</div>`;
       });
-      el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet... ✨</div>';
+      el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet...</div>';
       el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
       el.chatOnlineCount.innerText = `${Math.floor(2 + Math.random()*5)} online`;
     }
@@ -638,13 +681,12 @@
     function sendChatMessage() {
       const text = el.chatInput.value.trim();
       if (!text) return;
-      const displayName = userAddress ? `${userAddress.substring(0, 4)}...` : "Anon";
-      addChatMessage(displayName, text, false);
+      addChatMessage(userAddress ? `${userAddress.substring(0, 4)}...` : "Anon", text, false);
       el.chatInput.value = '';
       setTimeout(() => {
         if (Math.random() > 0.3) {
-          const botName = ["ShroomFan","TrippyDude","CosmicSoul","MyceliumMind"][Math.floor(Math.random()*4)];
-          addChatMessage(botName, botReplies[Math.floor(Math.random()*botReplies.length)], false);
+          addChatMessage(["ShroomFan","TrippyDude","CosmicSoul","MyceliumMind"][Math.floor(Math.random()*4)], 
+            botReplies[Math.floor(Math.random()*botReplies.length)], false);
         }
         if (Math.random() > 0.6) addChatMessage("🍄 ShroomBot", botReplies[Math.floor(Math.random()*botReplies.length)], true);
       }, 600 + Math.random()*800);
@@ -663,66 +705,67 @@
         const remaining = Math.max(0, Math.ceil((boosterEndTime - Date.now()) / 1000));
         boosterHtml = `<div style="text-align:center;">
           <div class="booster-timer">⏳ ${remaining}s</div>
-          <div style="font-size:14px; margin:5px 0;">⚡ x4 ACTIVE ⚡</div>
+          <div style="font-size:14px;">⚡ x4 ACTIVE ⚡</div>
           <div class="progress-bar-container"><div class="progress-fill" style="width:100%; background:#ffaa00;"></div></div>
         </div>`;
       } else {
-        const progressPercent = (boosterClicks / BOOSTER_REQUIRED) * 100;
+        const pct = (boosterClicks / BOOSTER_REQUIRED) * 100;
         boosterHtml = `<div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div>
-          <div class="progress-bar-container"><div class="progress-fill" style="width:${progressPercent}%;"></div></div>
+          <div class="progress-bar-container"><div class="progress-fill" style="width:${pct}%;"></div></div>
           <div style="font-size:13px;">tap 50x for 15s x4 boost</div>`;
       }
       el.boosterContent.innerHTML = boosterHtml;
 
       const multVal = getMult();
-      el.profile.innerHTML = `<div style="font-size:20px; margin-bottom:10px;">🌀 TRIP STATS</div>
+      el.profile.innerHTML = `<div style="font-size:20px;">🌀 TRIP STATS</div>
         <div>⚡ Spores/sec: ${(autoRate * multVal * (boosterActive ? 4 : 1)).toFixed(2)}</div>
-        <div>👆 Click: ${perClick} base</div>
-        <div>✨ Multiplier: x${multVal.toFixed(2)}</div>
-        <div>🔥 Per tap: ${tapVal.toFixed(1)}</div>
+        <div>👆 Click: ${perClick}</div>
+        <div>✨ Multi: x${multVal.toFixed(2)}</div>
+        <div>🔥 Tap: ${tapVal.toFixed(1)}</div>
         <div>🍄 Shrooms: ${shrooms}</div>
         <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:10px; width:100%;">💎 Send 0.01 MATIC</button>`;
       
-      let upHtml = `<div style="font-size:18px; margin-bottom:8px;">⬆️ UPGRADES</div>`;
+      let upHtml = `<div style="font-size:18px;">⬆️ UPGRADES</div>`;
       for (let key in upgrades) {
         const u = upgrades[key];
-        let maxCount = 0, simSpores = spores, simCost = u.cost;
-        while (simSpores >= simCost) { simSpores -= simCost; maxCount++; simCost = Math.floor(simCost * u.mult); }
+        let max = 0, s = spores, c = u.cost;
+        while (s >= c) { s -= c; max++; c = Math.floor(c * u.mult); }
         upHtml += `<div class="upgrade-card">
-          <div style="display:flex; justify-content:space-between;"><span style="font-size:18px;">${u.name}</span><span>owned: ${u.owned}</span></div>
+          <div><span style="font-size:18px;">${u.name}</span> | owned: ${u.owned}</div>
           <div>💰 ${u.cost} spores</div>
-          <div class="max-buy-info">Max: <strong>${maxCount}</strong></div>
+          <div class="max-buy-info">Max: ${max}</div>
           <div class="button-group">
             <button onclick="window.gameBuy('${key}')">Buy 1</button>
-            <button onclick="window.gameBuyMax('${key}')" ${maxCount===0?'disabled':''}>🔥 MAX</button>
+            <button onclick="window.gameBuyMax('${key}')" ${max===0?'disabled':''}>🔥 MAX</button>
           </div></div>`;
       }
       el.upgradesDiv.innerHTML = upHtml;
 
-      const canAffordShroom = spores >= shroomCost;
+      const canBuy = spores >= shroomCost;
       el.prestigeDiv.innerHTML = `<div class="prestige-block">
-        <div style="font-size:22px;">🌀 ASCEND TO SHROOM 🌀</div>
+        <div style="font-size:22px;">🌀 ASCEND 🌀</div>
         <div class="shroom-gain">🍄 Buy Shroom</div>
-        <div>(+10% multiplier)</div>
+        <div>(+10%)</div>
         <div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;">
-          <div>💰 Cost: ${shroomCost.toLocaleString()} spores</div>
-          <div>✨ Spores: ${Math.floor(spores).toLocaleString()}</div>
-          <div>🍄 Shrooms: ${shrooms}</div>
+          <div>💰 ${shroomCost.toLocaleString()} spores</div>
+          <div>✨ ${Math.floor(spores).toLocaleString()}</div>
+          <div>🍄 ${shrooms}</div>
         </div>
-        <button onclick="window.buyShroom()" ${!canAffordShroom ? 'disabled' : ''} style="font-size:20px; padding:12px 30px; width:100%;">🍄 BUY SHROOM</button>
-        <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium Boost</button>
+        <button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:20px; width:100%;">🍄 BUY</button>
+        <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium</button>
       </div>`;
       
       renderChat();
       if (userAddress) updateBalance();
     }
 
+    // Exports
     window.gameBuy = buy;
     window.gameBuyMax = buyMax;
     window.buyShroom = buyShroom;
     window.sendMaticPayment = () => sendPayment('0.01');
 
-    // Event listeners
+    // Events
     el.connectWalletBtn.addEventListener('click', connectWallet);
     el.sendChatBtn.addEventListener('click', sendChatMessage);
     el.chatInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendChatMessage(); });
@@ -737,39 +780,21 @@
       });
     });
 
-    // Auto-connect on load
+    // Auto-connect
     async function autoConnect() {
-      log('🚀 Page loaded, checking for wallet...');
-      
       const ethereum = window.ethereum || window.trustwallet || window.web3?.currentProvider;
-      
       if (ethereum) {
-        log('✅ Provider found, checking existing session...');
         try {
           let accounts;
-          if (ethereum.request) {
-            accounts = await ethereum.request({ method: 'eth_accounts' });
-          } else if (ethereum.send) {
-            accounts = await ethereum.send('eth_accounts');
-          }
-          
-          if (accounts && accounts.length > 0) {
-            log('✅ Existing session found, auto-connecting...');
-            await connectWallet();
-          } else {
-            log('ℹ️ No existing session, waiting for user to connect');
-          }
-        } catch (e) {
-          log(`ℹ️ Could not auto-connect: ${e.message}`);
-        }
-      } else {
-        log('❌ No wallet provider detected');
+          if (ethereum.request) accounts = await ethereum.request({ method: 'eth_accounts' });
+          else if (ethereum.send) accounts = await ethereum.send('eth_accounts');
+          if (accounts?.length > 0) await connectWallet();
+        } catch(e) {}
       }
     }
 
     // Init
-    const loaded = loadGame();
-    if (!loaded) {
+    if (!loadGame()) {
       spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000;
       upgrades.click.cost = 20; upgrades.click.owned = 0;
       upgrades.auto.cost = 50; upgrades.auto.owned = 0;
@@ -782,7 +807,7 @@
     
     setInterval(() => { saveGame(); if (userAddress) updateBalance(); }, 5000);
     window.addEventListener('beforeunload', () => saveGame());
-  })();
+  }
 </script>
 </body>
 </html>
