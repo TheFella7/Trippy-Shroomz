@@ -45,76 +45,19 @@
         }
 
         @keyframes floatUp {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, 0) scale(0.8);
-            }
-            20% {
-                opacity: 1;
-                transform: translate(-50%, -30px) scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -100px) scale(1.5);
-            }
+            0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); }
+            100% { opacity: 0; transform: translate(-50%, -100px) scale(1.5); }
         }
         
         @keyframes tapBurst {
-            0% {
-                opacity: 1;
-                transform: translate(-50%, -50%) scale(0);
-            }
-            40% {
-                opacity: 0.6;
-                transform: translate(-50%, -50%) scale(1.2);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(-50%, -50%) scale(2);
-            }
+            0% { opacity: 1; transform: translate(-50%, -50%) scale(0); }
+            40% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); }
+            100% { opacity: 0; transform: translate(-50%, -50%) scale(2); }
         }
 
         @keyframes sporeFall {
-            0% {
-                opacity: 1;
-                transform: translateY(-50px) rotate(0deg) scale(0.5);
-            }
-            50% {
-                opacity: 1;
-                transform: translateY(50vh) rotate(180deg) scale(0.8);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(105vh) rotate(360deg) scale(1.2);
-            }
-        }
-
-        @keyframes sporeFloat {
-            0% {
-                opacity: 0.8;
-                transform: translateY(-30px) rotate(0deg);
-            }
-            25% {
-                opacity: 1;
-                transform: translateY(25vh) rotate(90deg);
-            }
-            50% {
-                opacity: 0.9;
-                transform: translateY(50vh) rotate(180deg);
-            }
-            75% {
-                opacity: 0.6;
-                transform: translateY(75vh) rotate(270deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translateY(105vh) rotate(360deg);
-            }
-        }
-
-        @keyframes boosterPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
+            0% { opacity: 0.8; transform: translateY(-50px) rotate(0deg); }
+            100% { opacity: 0; transform: translateY(105vh) rotate(360deg); }
         }
 
         .tap-float {
@@ -124,65 +67,51 @@
             pointer-events: none;
             z-index: 9999;
             text-shadow: 0 0 12px currentColor, 0 0 25px currentColor;
-            animation: floatUp 1s ease-out forwards;
+            animation: floatUp 0.8s ease-out forwards;
             font-family: 'Rubik Glitch', cursive;
             letter-spacing: 2px;
             white-space: nowrap;
             will-change: transform, opacity;
+            color: #ffdd00;
         }
         
         .tap-float.booster-active {
             color: #89CFF0 !important;
-            text-shadow: 0 0 15px #89CFF0, 0 0 30px #89CFF0, 0 0 45px #5DADE2;
+            text-shadow: 0 0 15px #89CFF0, 0 0 30px #89CFF0;
         }
         
         .tap-burst {
             position: fixed;
             pointer-events: none;
             z-index: 9998;
-            width: 50px;
-            height: 50px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            background: radial-gradient(circle, rgba(255,200,0,0.8), rgba(255,100,0,0.3), transparent 70%);
-            animation: tapBurst 0.6s ease-out forwards;
+            background: radial-gradient(circle, rgba(255,200,0,0.8), transparent 70%);
+            animation: tapBurst 0.5s ease-out forwards;
             will-change: transform, opacity;
         }
         
         .tap-burst.booster-active {
-            background: radial-gradient(circle, rgba(137,207,240,0.9), rgba(93,173,226,0.4), transparent 70%);
-            box-shadow: 0 0 30px #89CFF0, 0 0 60px #5DADE2;
+            background: radial-gradient(circle, rgba(137,207,240,0.9), transparent 70%);
+            box-shadow: 0 0 20px #89CFF0;
         }
         
-        .falling-spore {
-            position: fixed;
-            pointer-events: none;
-            z-index: 9997;
-            font-size: 20px;
-            animation: sporeFall 3s linear forwards;
-            will-change: transform;
-        }
-
         .falling-spore-img {
             position: fixed;
             pointer-events: none;
             z-index: 9997;
-            width: 50px;
-            height: 50px;
-            animation: sporeFloat 4s ease-in-out forwards;
+            width: 40px;
+            height: 40px;
+            animation: sporeFall 4s ease-in forwards;
             will-change: transform;
-            filter: drop-shadow(0 0 15px #89CFF0) drop-shadow(0 0 30px #5DADE2);
+            filter: drop-shadow(0 0 10px #89CFF0);
         }
 
         .falling-spore-img img {
             width: 100%;
             height: 100%;
             object-fit: contain;
-            animation: rotateShroom 2s linear infinite;
-        }
-
-        @keyframes rotateShroom {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
         }
 
         .modal-overlay {
@@ -207,11 +136,6 @@
             width: 90%;
             text-align: center;
             box-shadow: 0 0 50px #ff69b4, 0 0 100px #7B3FE4;
-            animation: modalGlow 2s infinite;
-        }
-        @keyframes modalGlow {
-            0%, 100% { box-shadow: 0 0 30px #ff69b4, 0 0 60px #7B3FE4; }
-            50% { box-shadow: 0 0 60px #ff69b4, 0 0 120px #7B3FE4; }
         }
         .modal-title {
             font-size: 24px;
@@ -253,6 +177,10 @@
             font-size: 18px;
             width: 100%;
             margin-top: 10px;
+            cursor: pointer;
+            color: white;
+            font-family: 'Rubik Glitch', cursive;
+            border-radius: 40px;
         }
 
         .wallet-section {
@@ -278,10 +206,6 @@
             transition: 0.3s;
             -webkit-tap-highlight-color: transparent;
             touch-action: manipulation;
-        }
-        .connect-wallet-btn:active {
-            box-shadow: 0 0 25px #00ff88;
-            transform: scale(1.05);
         }
         .network-badge {
             background: #0f0f1a;
@@ -316,18 +240,13 @@
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            animation: gradientMove 6s ease infinite, pulseGlow 2.2s infinite;
-            text-shadow: 0 0 12px magenta;
+            animation: gradientMove 6s ease infinite;
         }
         .title-sub { font-size: 12px; opacity: 0.8; letter-spacing: 4px; color: #b0ffb0; }
         @keyframes gradientMove {
             0% { background-position: 0% 50%; }
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
-        }
-        @keyframes pulseGlow {
-            0%,100% { filter: drop-shadow(0 0 6px #ff44ff); }
-            50% { filter: drop-shadow(0 0 22px #00ffff); }
         }
 
         .player-name-display {
@@ -365,24 +284,18 @@
             margin: 6px 0 10px;
             border: 1px solid #0f0;
             color: #cfc;
-            letter-spacing: 0.5px;
-            backdrop-filter: blur(4px);
         }
         
-        /* Character styles */
         #character {
-            width: 180px;
-            height: 180px;
+            width: 160px;
+            height: 160px;
             cursor: pointer;
             display: inline-block;
-            filter: drop-shadow(0 0 25px #39ff14);
-            animation: idleWobble 1.2s infinite;
-            transition: transform 0.05s, filter 0.3s;
+            filter: drop-shadow(0 0 20px #39ff14);
+            transition: filter 0.3s;
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            margin: 15px auto;
-            position: relative;
-            will-change: transform;
+            margin: 10px auto;
             background: transparent;
         }
         
@@ -390,36 +303,15 @@
             width: 100%;
             height: 100%;
             object-fit: contain;
-            object-position: center;
             pointer-events: none;
             user-select: none;
             -webkit-user-drag: none;
-            mix-blend-mode: normal;
-            filter: contrast(1.1) saturate(1.2);
-            background: transparent;
         }
         
         #character:active {
-            animation: trippyActive 0.22s infinite;
-            filter: drop-shadow(0 0 45px #ff00ff) brightness(1.2);
-        }
-        
-        #character:active img {
-            transform: scale(1.1);
-        }
-        
-        @keyframes idleWobble {
-            0% { transform: rotate(-5deg); }
-            50% { transform: rotate(7deg) translateY(-5px); }
-            100% { transform: rotate(-5deg); }
-        }
-        @keyframes trippyActive {
-            0% { transform: rotate(-12deg) scale(1.1); }
-            50% { transform: rotate(12deg) translateY(-14px) scale(1.25); }
-            100% { transform: rotate(-12deg) scale(1.1); }
+            filter: drop-shadow(0 0 40px #ff00ff) brightness(1.2);
         }
 
-        .mushroom-stats { margin: 8px 0 4px; font-size: 16px; text-shadow: 0 0 6px black; }
         .per-tap {
             background: rgba(20, 40, 20, 0.7);
             padding: 6px 12px;
@@ -428,6 +320,7 @@
             border: 1px solid #9f9;
             backdrop-filter: blur(4px);
             margin-bottom: 8px;
+            font-size: 16px;
         }
         .booster-box {
             background: rgba(30, 10, 30, 0.8);
@@ -437,12 +330,6 @@
             margin: 6px 0 12px;
             backdrop-filter: blur(8px);
             box-shadow: 0 0 20px #ff44aa66;
-            transition: all 0.3s;
-        }
-        .booster-box.active {
-            border-color: #ff69b4;
-            box-shadow: 0 0 20px #ff44aa66;
-            animation: boosterPulse 2s infinite;
         }
         .booster-title {
             font-size: 18px;
@@ -451,9 +338,6 @@
             align-items: center;
             justify-content: center;
             gap: 8px;
-        }
-        .booster-title.active {
-            color: #ffb3ff;
         }
         .progress-bar-container {
             background: #1a1a2a;
@@ -469,10 +353,6 @@
             background: linear-gradient(90deg, #ff66b2, #ff3399);
             box-shadow: 0 0 10px #ff66b2;
             transition: width 0.3s ease-out;
-        }
-        .progress-fill.active-fill {
-            background: linear-gradient(90deg, #ff66b2, #ff3399);
-            box-shadow: 0 0 10px #ff66b2;
         }
         .booster-timer {
             font-size: 22px;
@@ -594,8 +474,6 @@
             border: 1px solid #2a6a2a;
             font-size: 12px;
             line-height: 1.4;
-            scroll-behavior: smooth;
-            will-change: scroll-position;
         }
         .chat-message { margin: 4px 0; word-break: break-word; }
         .chat-user { color: #8f8; font-weight: bold; }
@@ -693,16 +571,13 @@
 
         <div id="serverStats"></div>
 
-        <!-- NEW mushroom image -->
         <div id="character">
             <img src="https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png" 
                  alt="Mushroom"
                  draggable="false">
         </div>
 
-        <div class="mushroom-stats">
-            <div class="per-tap" id="perTapDisplay">✨ per tap: 1</div>
-        </div>
+        <div class="per-tap" id="perTapDisplay">✨ per tap: 1</div>
 
         <div class="booster-box" id="boosterBox">
             <div class="booster-title" id="boosterTitle">
@@ -765,16 +640,13 @@
                 const script = document.createElement('script');
                 script.src = cdns[index];
                 script.onload = () => {
-                    console.log('Ethers loaded from:', cdns[index]);
+                    console.log('Ethers loaded');
                     if (loadingEl) loadingEl.style.display = 'none';
                     if (typeof ethers !== 'undefined') {
                         initGame();
                     }
                 };
-                script.onerror = () => {
-                    console.warn('Failed to load from:', cdns[index]);
-                    tryLoad(index + 1);
-                };
+                script.onerror = () => tryLoad(index + 1);
                 document.head.appendChild(script);
             }
 
@@ -788,8 +660,6 @@
 
             const POLYGON_CHAIN_ID = 137;
             const PAYMENT_ADDRESS = '0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
-            
-            // Mushroom image URL for falling spores
             const MUSHROOM_IMAGE_URL = 'https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png';
 
             let provider = null;
@@ -801,22 +671,19 @@
 
             let spores = 0, shrooms = 0, perClick = 1, autoRate = 0, shroomCost = 100000;
             const upgrades = {
-                click: { name: "🍄 Click Power", cost: 20, owned: 0, mult: 1.15, baseCost: 20 },
-                auto: { name: "🤖 Auto Forager", cost: 50, owned: 0, mult: 1.15, baseCost: 50 }
+                click: { name: "🍄 Click Power", cost: 20, owned: 0, mult: 1.15 },
+                auto: { name: "🤖 Auto Forager", cost: 50, owned: 0, mult: 1.15 }
             };
             let boosterClicks = 0, boosterActive = false, boosterEndTime = 0;
             const BOOSTER_DURATION = 15000, BOOSTER_REQUIRED = 50;
-            
             let lastTapTimeForDecay = 0;
-            let lastRenderTime = 0;
-            const RENDER_INTERVAL = 100;
-            let renderScheduled = false;
+            let fallingSporesInterval = null;
+            const MAX_FALLING_SPORES = 8;
 
             const getMult = () => 1 + shrooms * 0.1;
 
             function getPerTapAmount() {
-                let base = perClick * getMult();
-                return boosterActive ? base * 5 : base;
+                return (perClick * getMult()) * (boosterActive ? 5 : 1);
             }
 
             const el = {
@@ -858,21 +725,17 @@
                 }
             }
 
+            // ============ USERNAME SYSTEM ============
             function loadUsername() {
                 try {
                     const saved = localStorage.getItem('trippyShroomz_username');
                     if (saved) {
                         const data = JSON.parse(saved);
-                        if (data.walletAddress && data.username) {
-                            if (userAddress && data.walletAddress.toLowerCase() === userAddress.toLowerCase()) {
-                                playerName = data.username;
-                                hasSetName = true;
-                                return true;
-                            }
-                            if (userAddress && data.walletAddress.toLowerCase() !== userAddress.toLowerCase()) {
-                                localStorage.removeItem('trippyShroomz_username');
-                                return false;
-                            }
+                        if (data.walletAddress && data.username && userAddress && 
+                            data.walletAddress.toLowerCase() === userAddress.toLowerCase()) {
+                            playerName = data.username;
+                            hasSetName = true;
+                            return true;
                         }
                     }
                 } catch (e) {}
@@ -896,7 +759,7 @@
                     el.usernameModal.style.display = 'flex';
                     if (el.usernameInput) {
                         el.usernameInput.value = '';
-                        el.usernameInput.focus();
+                        setTimeout(() => el.usernameInput.focus(), 100);
                     }
                 }
             }
@@ -906,112 +769,71 @@
             }
 
             function setPlayerName(name) {
-                if (!name || name.trim().length === 0) {
-                    alert('🍄 Please enter a cosmic name, traveler!');
-                    return false;
-                }
-                const trimmedName = name.trim().substring(0, 20);
-                playerName = trimmedName;
+                if (!name || name.trim().length === 0) return false;
+                playerName = name.trim().substring(0, 20);
                 hasSetName = true;
                 saveUsername();
                 hideUsernameModal();
                 updatePlayerNameDisplay();
                 render();
-                log(`✅ Player name set: ${playerName}`);
                 addChatMessage("🍄 ShroomBot", `${playerName} has joined the mycelium network! 🍄✨`, true);
                 return true;
             }
 
             function updatePlayerNameDisplay() {
-                if (playerName && el.playerNameDisplay && el.playerNameText) {
-                    el.playerNameDisplay.style.display = 'inline-block';
-                    el.playerNameText.textContent = playerName;
-                } else if (el.playerNameDisplay) {
-                    el.playerNameDisplay.style.display = 'none';
+                if (el.playerNameDisplay && el.playerNameText) {
+                    if (playerName) {
+                        el.playerNameDisplay.style.display = 'inline-block';
+                        el.playerNameText.textContent = playerName;
+                    } else {
+                        el.playerNameDisplay.style.display = 'none';
+                    }
                 }
             }
 
-            function changePlayerName() {
-                const newName = prompt('🍄 Enter your new cosmic name (max 20 chars):\n\n💡 Use your Reddit username for reward payouts!', playerName);
+            window.changePlayerName = function() {
+                const newName = prompt('Enter your new cosmic name:', playerName);
                 if (newName && newName.trim().length > 0) setPlayerName(newName);
-            }
+            };
 
+            // ============ WALLET ============
             async function connectWallet() {
-                log('🔍 Starting wallet connection...');
-                if (el.connectionLog) el.connectionLog.innerHTML = '';
-                let ethereum = null;
-                if (window.ethereum) {
-                    log('✅ Found window.ethereum');
-                    ethereum = window.ethereum;
-                } else if (window.trustwallet) {
-                    log('✅ Found window.trustwallet');
-                    ethereum = window.trustwallet;
-                } else if (window.web3?.currentProvider) {
-                    log('✅ Found window.web3.currentProvider');
-                    ethereum = window.web3.currentProvider;
-                } else {
-                    log('❌ No wallet provider found!');
-                    alert('❌ No wallet detected!\n\nPlease open this page inside Trust Wallet or MetaMask app browser.');
+                let ethereum = window.ethereum || window.trustwallet;
+                if (!ethereum) {
+                    alert('No wallet detected!');
                     return;
                 }
                 try {
-                    let accounts;
-                    if (ethereum.request) accounts = await ethereum.request({ method: 'eth_requestAccounts' });
-                    else if (ethereum.enable) accounts = await ethereum.enable();
-                    else if (ethereum.send) accounts = await ethereum.send('eth_requestAccounts');
-                    else throw new Error('No method to request accounts');
-                    if (!accounts || accounts.length === 0) throw new Error('No accounts');
+                    const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
                     userAddress = accounts[0];
-                    log(`✅ Connected: ${userAddress.substring(0, 10)}...`);
                     provider = new ethers.providers.Web3Provider(ethereum);
                     signer = provider.getSigner();
                     const network = await provider.getNetwork();
-                    log(`Network: ${network.name} (${network.chainId})`);
                     if (network.chainId !== POLYGON_CHAIN_ID) {
-                        log('⚠️ Switching to Polygon...');
                         try {
                             await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x89' }] });
-                        } catch (switchError) {
-                            if (switchError.code === 4902) {
-                                await ethereum.request({
-                                    method: 'wallet_addEthereumChain',
-                                    params: [{ chainId: '0x89', chainName: 'Polygon Mainnet', nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 }, rpcUrls: ['https://polygon-rpc.com'], blockExplorerUrls: ['https://polygonscan.com/'] }]
-                                });
-                            }
-                        }
+                        } catch (e) {}
                     }
                     await updateBalance();
                     el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
                     el.walletInfo.style.display = 'flex';
                     el.connectWalletBtn.textContent = '✅ Connected';
                     el.connectWalletBtn.style.background = 'linear-gradient(135deg, #00aa44, #006622)';
-                    el.networkBadge.textContent = '⛓️ Polygon';
-                    log('🎉 Success!');
-                    const hasExistingName = loadUsername();
-                    updatePlayerNameDisplay();
-                    if (!hasExistingName) {
-                        log('📝 No existing username, showing modal...');
-                        setTimeout(() => showUsernameModal(), 1000);
+                    
+                    if (!loadUsername()) {
+                        setTimeout(() => showUsernameModal(), 500);
                     } else {
-                        log(`✅ Welcome back, ${playerName}!`);
                         addChatMessage("🍄 ShroomBot", `Welcome back, ${playerName}! 🍄✨`, true);
                     }
-                    ethereum.on('accountsChanged', (newAccounts) => {
-                        if (newAccounts.length === 0) disconnectWallet();
-                        else {
-                            userAddress = newAccounts[0];
-                            el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
-                            updateBalance();
-                            if (!loadUsername()) showUsernameModal();
-                            render();
-                        }
+                    
+                    ethereum.on('accountsChanged', (acc) => {
+                        if (acc.length === 0) disconnectWallet();
+                        else { userAddress = acc[0]; updateBalance(); render(); }
                     });
-                    ethereum.on('chainChanged', () => window.location.reload());
+                    
                     render();
                 } catch (error) {
-                    log(`❌ Error: ${error.message}`);
                     console.error(error);
-                    alert(`❌ Connection failed: ${error.message}`);
                 }
             }
 
@@ -1019,11 +841,9 @@
                 userAddress = null; provider = null; signer = null; maticBalance = '0';
                 playerName = ''; hasSetName = false;
                 el.walletAddress.textContent = 'Not connected';
-                el.maticBalance.textContent = '0 MATIC';
                 el.walletInfo.style.display = 'none';
                 el.connectWalletBtn.textContent = '🔌 Connect Wallet';
                 el.connectWalletBtn.style.background = 'linear-gradient(135deg, #7B3FE4, #4A90E2)';
-                el.networkBadge.textContent = '⛓️ Polygon';
                 updatePlayerNameDisplay();
                 render();
             }
@@ -1034,26 +854,24 @@
                     const balance = await provider.getBalance(userAddress);
                     maticBalance = ethers.utils.formatEther(balance);
                     el.maticBalance.textContent = `${parseFloat(maticBalance).toFixed(3)} MATIC`;
-                } catch (error) { console.error('Balance error:', error); }
+                } catch (e) {}
             }
 
-            async function sendPayment(amountInMatic = '0.01') {
-                if (!signer) { alert('❌ Connect wallet first!'); return false; }
+            window.sendMaticPayment = async function() {
+                if (!signer) { alert('Connect wallet first!'); return; }
                 try {
-                    const tx = await signer.sendTransaction({ to: PAYMENT_ADDRESS, value: ethers.utils.parseEther(amountInMatic) });
-                    alert(`✅ Sent! TX: ${tx.hash.substring(0, 10)}...`);
+                    const tx = await signer.sendTransaction({
+                        to: PAYMENT_ADDRESS,
+                        value: ethers.utils.parseEther('0.01')
+                    });
                     await tx.wait();
-                    grantPremiumBenefits();
-                    return true;
-                } catch (error) { console.error(error); alert('❌ Failed: ' + error.message); return false; }
-            }
+                    perClick += 5; autoRate += 2; spores += 10000;
+                    alert('Premium activated!');
+                    saveGame(); render();
+                } catch (e) { alert('Transaction failed'); }
+            };
 
-            function grantPremiumBenefits() {
-                perClick += 5; autoRate += 2; spores += 10000;
-                alert('🎉 Premium! +5 Power, +2 Auto, +10K Spores');
-                saveGame(); render();
-            }
-
+            // ============ GAME LOGIC ============
             const SAVE_KEY = 'trippyShroomzSave_v10';
 
             function saveGame() {
@@ -1066,10 +884,6 @@
                         }
                     }));
                 } catch (e) {}
-                if (el.saveIndicator) {
-                    el.saveIndicator.style.opacity = '1';
-                    setTimeout(() => el.saveIndicator.style.opacity = '0.7', 200);
-                }
             }
 
             function loadGame() {
@@ -1092,41 +906,20 @@
                 } catch (e) { return false; }
             }
 
-            let activeTapEffects = [];
-            const MAX_TAP_EFFECTS = 15;
-            let fallingSporesInterval = null;
-
-            function cleanupTapEffects() {
-                while (activeTapEffects.length > MAX_TAP_EFFECTS) {
-                    const oldEffect = activeTapEffects.shift();
-                    if (oldEffect && oldEffect.parentNode) {
-                        oldEffect.parentNode.removeChild(oldEffect);
-                    }
-                }
-            }
-
             function gainSpores() {
-                let amount = perClick * getMult();
-                if (boosterActive) amount *= 5;
+                const amount = getPerTapAmount();
                 spores += amount;
                 return amount;
             }
 
-            function showEnhancedTapEffect(amount, clientX, clientY) {
-                cleanupTapEffects();
-
+            function showTapEffect(amount, clientX, clientY) {
                 const floatEl = document.createElement('div');
                 floatEl.className = 'tap-float';
-                if (boosterActive) {
-                    floatEl.classList.add('booster-active');
-                } else {
-                    floatEl.style.color = '#ffdd00';
-                }
+                if (boosterActive) floatEl.classList.add('booster-active');
                 floatEl.textContent = `+${amount.toFixed(1)}`;
                 floatEl.style.left = clientX + 'px';
                 floatEl.style.top = clientY + 'px';
                 document.body.appendChild(floatEl);
-                activeTapEffects.push(floatEl);
 
                 const burstEl = document.createElement('div');
                 burstEl.className = 'tap-burst';
@@ -1134,63 +927,43 @@
                 burstEl.style.left = clientX + 'px';
                 burstEl.style.top = clientY + 'px';
                 document.body.appendChild(burstEl);
-                activeTapEffects.push(burstEl);
 
                 setTimeout(() => {
-                    if (floatEl.parentNode) floatEl.parentNode.removeChild(floatEl);
-                    if (burstEl.parentNode) burstEl.parentNode.removeChild(burstEl);
-                    const floatIdx = activeTapEffects.indexOf(floatEl);
-                    if (floatIdx > -1) activeTapEffects.splice(floatIdx, 1);
-                    const burstIdx = activeTapEffects.indexOf(burstEl);
-                    if (burstIdx > -1) activeTapEffects.splice(burstIdx, 1);
-                }, 1000);
+                    floatEl.remove();
+                    burstEl.remove();
+                }, 800);
             }
 
-            // NEW: Spawn falling mushroomz image instead of emojis
             function spawnFallingSpore() {
                 if (!boosterActive) return;
                 
-                const sporeContainer = document.createElement('div');
-                sporeContainer.className = 'falling-spore-img';
-                sporeContainer.style.left = Math.random() * (window.innerWidth - 60) + 'px';
-                sporeContainer.style.top = '-60px';
+                const existingSpores = document.querySelectorAll('.falling-spore-img');
+                if (existingSpores.length >= MAX_FALLING_SPORES) {
+                    existingSpores[0].remove();
+                }
+
+                const spore = document.createElement('div');
+                spore.className = 'falling-spore-img';
+                spore.style.left = Math.random() * (window.innerWidth - 50) + 'px';
+                spore.style.top = '-50px';
+                spore.style.animationDuration = (3 + Math.random() * 2) + 's';
                 
-                // Randomize animation duration for variety
-                const duration = 3 + Math.random() * 3;
-                sporeContainer.style.animationDuration = duration + 's';
-                
-                // Randomize size slightly
-                const size = 30 + Math.random() * 40; // 30-70px
-                sporeContainer.style.width = size + 'px';
-                sporeContainer.style.height = size + 'px';
-                
-                // Add the mushroomz image
                 const img = document.createElement('img');
                 img.src = MUSHROOM_IMAGE_URL;
-                img.alt = '🍄';
                 img.draggable = false;
-                sporeContainer.appendChild(img);
+                spore.appendChild(img);
                 
-                document.body.appendChild(sporeContainer);
+                document.body.appendChild(spore);
                 
-                // Remove after animation completes
-                setTimeout(() => {
-                    if (sporeContainer.parentNode) {
-                        sporeContainer.parentNode.removeChild(sporeContainer);
-                    }
-                }, duration * 1000 + 500);
+                setTimeout(() => spore.remove(), 5000);
             }
 
             function startFallingSpores() {
                 if (fallingSporesInterval) return;
+                spawnFallingSpore();
                 fallingSporesInterval = setInterval(() => {
-                    if (boosterActive) {
-                        spawnFallingSpore();
-                        // Sometimes spawn multiple for extra effect
-                        if (Math.random() < 0.4) spawnFallingSpore();
-                        if (Math.random() < 0.2) spawnFallingSpore();
-                    }
-                }, 250); // Spawn every 250ms for denser effect
+                    if (boosterActive) spawnFallingSpore();
+                }, 1500);
             }
 
             function stopFallingSpores() {
@@ -1198,10 +971,11 @@
                     clearInterval(fallingSporesInterval);
                     fallingSporesInterval = null;
                 }
+                document.querySelectorAll('.falling-spore-img').forEach(s => s.remove());
             }
 
             let lastTapTime = 0;
-            const TAP_DEBOUNCE = 150;
+            const TAP_DEBOUNCE = 100;
 
             function processTap(e) {
                 const now = Date.now();
@@ -1210,10 +984,10 @@
                 lastTapTimeForDecay = now;
 
                 let clientX, clientY;
-                if (e.touches && e.touches.length > 0) {
+                if (e.touches) {
                     clientX = e.touches[0].clientX;
                     clientY = e.touches[0].clientY;
-                } else if (e.changedTouches && e.changedTouches.length > 0) {
+                } else if (e.changedTouches) {
                     clientX = e.changedTouches[0].clientX;
                     clientY = e.changedTouches[0].clientY;
                 } else {
@@ -1235,188 +1009,98 @@
                 }
 
                 const amount = gainSpores();
-                showEnhancedTapEffect(amount, clientX, clientY);
-                
-                if (!renderScheduled) {
-                    renderScheduled = true;
-                    requestAnimationFrame(() => {
-                        render();
-                        renderScheduled = false;
-                    });
-                }
+                showTapEffect(amount, clientX, clientY);
+                saveGame();
+                render();
             }
 
-            let holdInterval = null, isHolding = false;
-
-            function startHold(e) {
+            el.char.addEventListener("pointerdown", (e) => {
                 e.preventDefault();
                 processTap(e);
-                if (isHolding) return;
-                isHolding = true;
-                holdInterval = setInterval(() => {
-                    const rect = el.char.getBoundingClientRect();
-                    const centerX = rect.left + rect.width / 2;
-                    const centerY = rect.top + rect.height / 2;
-                    
-                    lastTapTimeForDecay = Date.now();
-                    
-                    if (boosterActive) {
-                        boosterEndTime = Date.now() + BOOSTER_DURATION;
-                    } else {
-                        boosterClicks = Math.min(boosterClicks + 1, BOOSTER_REQUIRED);
-                        if (boosterClicks >= BOOSTER_REQUIRED) {
-                            boosterActive = true;
-                            boosterClicks = 0;
-                            boosterEndTime = Date.now() + BOOSTER_DURATION;
-                            lastTapTimeForDecay = Date.now();
-                            startFallingSpores();
-                        }
-                    }
-                    
-                    const amount = gainSpores();
-                    showEnhancedTapEffect(amount, centerX, centerY);
-                    
-                    if (!renderScheduled) {
-                        renderScheduled = true;
-                        requestAnimationFrame(() => {
-                            render();
-                            renderScheduled = false;
-                        });
-                    }
-                }, 120);
-            }
-
-            function stopHold() {
-                if (isHolding) {
-                    clearInterval(holdInterval);
-                    isHolding = false;
-                }
-            }
-
-            el.char.addEventListener("mousedown", startHold);
-            el.char.addEventListener("touchstart", (e) => { e.preventDefault(); startHold(e); });
-            document.addEventListener("mouseup", stopHold);
-            document.addEventListener("touchend", stopHold);
+            });
             el.char.addEventListener("contextmenu", (e) => e.preventDefault());
 
-            let decayInterval = setInterval(() => {
+            // Boost decay check
+            setInterval(() => {
                 if (boosterActive) {
                     const now = Date.now();
-                    const timeSinceLastTap = now - lastTapTimeForDecay;
-                    
-                    if (timeSinceLastTap > 1500) {
-                        const remaining = Math.max(0, boosterEndTime - now);
-                        const totalDuration = BOOSTER_DURATION;
-                        const decayedClicks = Math.floor((1 - remaining / totalDuration) * BOOSTER_REQUIRED);
-                        boosterClicks = Math.max(0, BOOSTER_REQUIRED - decayedClicks);
-                        
-                        if (!renderScheduled) {
-                            renderScheduled = true;
-                            requestAnimationFrame(() => {
-                                render();
-                                renderScheduled = false;
-                            });
-                        }
+                    if (now > boosterEndTime) {
+                        boosterActive = false;
+                        boosterEndTime = 0;
+                        boosterClicks = 0;
+                        stopFallingSpores();
+                        render();
                     }
                 }
-            }, 1000);
-
-            setInterval(() => {
-                if (boosterActive && Date.now() > boosterEndTime) {
-                    boosterActive = false;
-                    boosterEndTime = 0;
-                    boosterClicks = 0;
-                    stopFallingSpores();
-                }
                 if (autoRate > 0) {
-                    let gain = autoRate * getMult();
-                    if (boosterActive) gain *= 5;
-                    spores += gain;
-                }
-                if (!renderScheduled) {
-                    renderScheduled = true;
-                    requestAnimationFrame(() => {
-                        render();
-                        renderScheduled = false;
-                    });
+                    spores += autoRate * getMult() * (boosterActive ? 5 : 1);
+                    saveGame();
+                    render();
                 }
             }, 1000);
 
-            function buy(upgradeKey) {
-                const u = upgrades[upgradeKey];
+            window.gameBuy = function(key) {
+                const u = upgrades[key];
                 if (!u || spores < u.cost) return;
                 spores -= u.cost;
                 u.owned++;
-                if (upgradeKey === "click") perClick++;
-                if (upgradeKey === "auto") autoRate++;
+                if (key === "click") perClick++;
+                if (key === "auto") autoRate++;
                 u.cost = Math.floor(u.cost * u.mult);
                 saveGame();
                 render();
-            }
+            };
 
-            function buyMax(upgradeKey) {
-                const u = upgrades[upgradeKey];
+            window.gameBuyMax = function(key) {
+                const u = upgrades[key];
                 if (!u) return;
-                let count = 0, tempSpores = spores, nextCost = u.cost;
-                while (tempSpores >= nextCost) {
-                    tempSpores -= nextCost;
-                    count++;
-                    nextCost = Math.floor(nextCost * u.mult);
-                }
+                let count = 0, s = spores, c = u.cost;
+                while (s >= c) { s -= c; count++; c = Math.floor(c * u.mult); }
                 if (count === 0) return;
-                spores = tempSpores;
+                spores = s;
                 u.owned += count;
-                if (upgradeKey === "click") perClick += count;
-                if (upgradeKey === "auto") autoRate += count;
-                u.cost = nextCost;
+                if (key === "click") perClick += count;
+                if (key === "auto") autoRate += count;
+                u.cost = c;
                 saveGame();
                 render();
-            }
+            };
 
-            function buyShroom() {
+            window.buyShroom = function() {
                 if (spores < shroomCost) return;
                 spores -= shroomCost;
                 shrooms++;
                 shroomCost = Math.floor(shroomCost * 1.15);
                 saveGame();
                 render();
-            }
+            };
 
             function getOnline() { return Math.floor(120 + Math.sin(Date.now() / 4000) * 30); }
             function getTotalPlayers() {
                 let stored = localStorage.getItem("tp_trippy_v3");
                 if (!stored) { stored = 12500 + Math.floor(Math.random() * 800); localStorage.setItem("tp_trippy_v3", stored); }
-                return stored;
+                return parseInt(stored);
             }
 
             let chatMessages = [
-                { user: "🍄 ShroomBot", text: "Welcome! ✨", isBot: true, timestamp: Date.now() - 30000 },
-                { user: "CosmicWanderer", text: "colors! 🌈", isBot: false, timestamp: Date.now() - 15000 }
+                { user: "🍄 ShroomBot", text: "Welcome! ✨", isBot: true, timestamp: Date.now() }
             ];
-            const botReplies = ["🍄", "vibe ✅", "power! 💪", "fast ⚡", "fractals!", "multiplier!", "🔥", "hypnotic", "🚀", "wallet!"];
 
             function addChatMessage(user, text, isBot = false) {
                 chatMessages.push({ user, text, isBot, timestamp: Date.now() });
-                if (chatMessages.length > 30) chatMessages.shift();
+                if (chatMessages.length > 50) chatMessages.shift();
                 renderChat();
             }
 
-            let chatRenderScheduled = false;
             function renderChat() {
-                if (!el.chatMessages || chatRenderScheduled) return;
-                chatRenderScheduled = true;
-                requestAnimationFrame(() => {
-                    let html = '';
-                    const recentMessages = chatMessages.slice(-20);
-                    recentMessages.reverse().forEach(msg => {
-                        const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        html += `<div class="chat-message"><span class="chat-time">${timeStr}</span><span class="${msg.isBot ? 'chat-bot' : 'chat-user'}">${msg.user}:</span> ${msg.text}</div>`;
-                    });
-                    el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet...</div>';
-                    el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
-                    el.chatOnlineCount.innerText = `${Math.floor(2 + Math.random()*5)} online`;
-                    chatRenderScheduled = false;
+                if (!el.chatMessages) return;
+                let html = '';
+                chatMessages.slice(-15).reverse().forEach(msg => {
+                    const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    html += `<div class="chat-message"><span class="chat-time">${timeStr}</span><span class="${msg.isBot ? 'chat-bot' : 'chat-user'}">${msg.user}:</span> ${msg.text}</div>`;
                 });
+                el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet...</div>';
+                el.chatOnlineCount.innerText = `${Math.floor(2 + Math.random()*5)} online`;
             }
 
             function sendChatMessage() {
@@ -1425,20 +1109,9 @@
                 const displayName = playerName || (userAddress ? `${userAddress.substring(0, 4)}...` : "Anon");
                 addChatMessage(displayName, text, false);
                 el.chatInput.value = '';
-                setTimeout(() => {
-                    if (Math.random() > 0.3) {
-                        addChatMessage(["ShroomFan", "TrippyDude", "CosmicSoul", "MyceliumMind"][Math.floor(Math.random() * 4)], 
-                            botReplies[Math.floor(Math.random() * botReplies.length)], false);
-                    }
-                    if (Math.random() > 0.6) addChatMessage("🍄 ShroomBot", botReplies[Math.floor(Math.random() * botReplies.length)], true);
-                }, 600 + Math.random() * 800);
             }
 
             function render() {
-                const now = Date.now();
-                if (now - lastRenderTime < RENDER_INTERVAL) return;
-                lastRenderTime = now;
-
                 el.spores.innerText = `✨ Spores: ${Math.floor(spores)}`;
                 el.shrooms.innerText = `🍄 Shrooms: ${shrooms}`;
                 el.server.innerText = `🌍 Online: ${getOnline()}  |  👥 Total: ${getTotalPlayers()}`;
@@ -1446,27 +1119,13 @@
                 const tapVal = getPerTapAmount();
                 el.perTapDisplay.innerHTML = `✨ per tap: ${tapVal.toFixed(1)} ${boosterActive ? '🔥 x5' : ''}`;
 
-                if (boosterActive) {
-                    el.boosterBox.classList.add('active');
-                    el.boosterTitle.classList.add('active');
-                } else {
-                    el.boosterBox.classList.remove('active');
-                    el.boosterTitle.classList.remove('active');
-                }
-
                 let boosterHtml = '';
                 if (boosterActive) {
                     const remaining = Math.max(0, Math.ceil((boosterEndTime - Date.now()) / 1000));
-                    const timeSinceLastTap = Date.now() - lastTapTimeForDecay;
-                    const decayPct = timeSinceLastTap > 1500 ? Math.max(0, remaining / (BOOSTER_DURATION / 1000)) : 100;
-                    
                     boosterHtml = `<div style="text-align:center;">
                         <div class="booster-timer">⏳ ${remaining}s</div>
                         <div style="font-size:14px; color:#ffb3ff;">⚡ x5 ACTIVE ⚡</div>
-                        <div class="progress-bar-container">
-                            <div class="progress-fill active-fill" style="width:${decayPct}%;"></div>
-                        </div>
-                        ${timeSinceLastTap > 1500 ? '<div style="font-size:11px; color:#ff9999;">⚠️ Tap to maintain boost!</div>' : ''}
+                        <div class="progress-bar-container"><div class="progress-fill" style="width:100%;"></div></div>
                     </div>`;
                 } else {
                     const pct = (boosterClicks / BOOSTER_REQUIRED) * 100;
@@ -1518,21 +1177,18 @@
                 </div>`;
 
                 renderChat();
-                if (userAddress) updateBalance();
                 updatePlayerNameDisplay();
             }
 
-            window.gameBuy = buy;
-            window.gameBuyMax = buyMax;
-            window.buyShroom = buyShroom;
-            window.sendMaticPayment = () => sendPayment('0.01');
-            window.changePlayerName = changePlayerName;
-
+            // Event listeners
             el.connectWalletBtn.addEventListener('click', connectWallet);
             el.sendChatBtn.addEventListener('click', sendChatMessage);
             el.chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
-            el.saveUsernameBtn.addEventListener('click', () => { setPlayerName(el.usernameInput.value); });
-            el.usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') setPlayerName(el.usernameInput.value); });
+            
+            el.saveUsernameBtn.addEventListener('click', () => setPlayerName(el.usernameInput.value));
+            el.usernameInput.addEventListener('keypress', (e) => { 
+                if (e.key === 'Enter') setPlayerName(el.usernameInput.value); 
+            });
 
             document.querySelectorAll(".tab").forEach(tab => {
                 tab.addEventListener("click", () => {
@@ -1540,35 +1196,32 @@
                     document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
                     tab.classList.add("active");
                     document.getElementById(tab.dataset.tab).classList.add("active");
-                    render();
                 });
             });
 
-            async function autoConnect() {
-                const ethereum = window.ethereum || window.trustwallet || window.web3?.currentProvider;
-                if (ethereum) {
-                    try {
-                        let accounts;
-                        if (ethereum.request) accounts = await ethereum.request({ method: 'eth_accounts' });
-                        else if (ethereum.send) accounts = await ethereum.send('eth_accounts');
-                        if (accounts?.length > 0) await connectWallet();
-                    } catch (e) {}
-                }
-            }
-
+            // Init
             if (!loadGame()) {
                 spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000;
                 upgrades.click.cost = 20; upgrades.click.owned = 0;
                 upgrades.auto.cost = 50; upgrades.auto.owned = 0;
             }
 
-            autoConnect();
             render();
             renderChat();
             saveGame();
 
-            setInterval(() => { saveGame(); if (userAddress) updateBalance(); }, 5000);
-            window.addEventListener('beforeunload', () => saveGame());
+            // Auto-connect if wallet available
+            (async () => {
+                const ethereum = window.ethereum;
+                if (ethereum) {
+                    try {
+                        const accounts = await ethereum.request({ method: 'eth_accounts' });
+                        if (accounts?.length > 0) await connectWallet();
+                    } catch (e) {}
+                }
+            })();
+
+            setInterval(saveGame, 5000);
         }
     </script>
 </body>
