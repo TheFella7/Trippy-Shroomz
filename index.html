@@ -77,11 +77,38 @@
         @keyframes sporeFall {
             0% {
                 opacity: 1;
-                transform: translateY(-20px) rotate(0deg);
+                transform: translateY(-50px) rotate(0deg) scale(0.5);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(50vh) rotate(180deg) scale(0.8);
             }
             100% {
                 opacity: 0;
-                transform: translateY(100vh) rotate(360deg);
+                transform: translateY(105vh) rotate(360deg) scale(1.2);
+            }
+        }
+
+        @keyframes sporeFloat {
+            0% {
+                opacity: 0.8;
+                transform: translateY(-30px) rotate(0deg);
+            }
+            25% {
+                opacity: 1;
+                transform: translateY(25vh) rotate(90deg);
+            }
+            50% {
+                opacity: 0.9;
+                transform: translateY(50vh) rotate(180deg);
+            }
+            75% {
+                opacity: 0.6;
+                transform: translateY(75vh) rotate(270deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(105vh) rotate(360deg);
             }
         }
 
@@ -133,6 +160,29 @@
             font-size: 20px;
             animation: sporeFall 3s linear forwards;
             will-change: transform;
+        }
+
+        .falling-spore-img {
+            position: fixed;
+            pointer-events: none;
+            z-index: 9997;
+            width: 50px;
+            height: 50px;
+            animation: sporeFloat 4s ease-in-out forwards;
+            will-change: transform;
+            filter: drop-shadow(0 0 15px #89CFF0) drop-shadow(0 0 30px #5DADE2);
+        }
+
+        .falling-spore-img img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            animation: rotateShroom 2s linear infinite;
+        }
+
+        @keyframes rotateShroom {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .modal-overlay {
@@ -738,6 +788,9 @@
 
             const POLYGON_CHAIN_ID = 137;
             const PAYMENT_ADDRESS = '0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
+            
+            // Mushroom image URL for falling spores
+            const MUSHROOM_IMAGE_URL = 'https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png';
 
             let provider = null;
             let signer = null;
@@ -1093,18 +1146,39 @@
                 }, 1000);
             }
 
+            // NEW: Spawn falling mushroomz image instead of emojis
             function spawnFallingSpore() {
                 if (!boosterActive) return;
-                const spore = document.createElement('div');
-                spore.className = 'falling-spore';
-                spore.textContent = ['🍄', '✨', '💫', '⭐', '🌟'][Math.floor(Math.random() * 5)];
-                spore.style.left = Math.random() * window.innerWidth + 'px';
-                spore.style.top = '-30px';
-                spore.style.animationDuration = (2 + Math.random() * 2) + 's';
-                document.body.appendChild(spore);
+                
+                const sporeContainer = document.createElement('div');
+                sporeContainer.className = 'falling-spore-img';
+                sporeContainer.style.left = Math.random() * (window.innerWidth - 60) + 'px';
+                sporeContainer.style.top = '-60px';
+                
+                // Randomize animation duration for variety
+                const duration = 3 + Math.random() * 3;
+                sporeContainer.style.animationDuration = duration + 's';
+                
+                // Randomize size slightly
+                const size = 30 + Math.random() * 40; // 30-70px
+                sporeContainer.style.width = size + 'px';
+                sporeContainer.style.height = size + 'px';
+                
+                // Add the mushroomz image
+                const img = document.createElement('img');
+                img.src = MUSHROOM_IMAGE_URL;
+                img.alt = '🍄';
+                img.draggable = false;
+                sporeContainer.appendChild(img);
+                
+                document.body.appendChild(sporeContainer);
+                
+                // Remove after animation completes
                 setTimeout(() => {
-                    if (spore.parentNode) spore.parentNode.removeChild(spore);
-                }, 3000);
+                    if (sporeContainer.parentNode) {
+                        sporeContainer.parentNode.removeChild(sporeContainer);
+                    }
+                }, duration * 1000 + 500);
             }
 
             function startFallingSpores() {
@@ -1112,9 +1186,11 @@
                 fallingSporesInterval = setInterval(() => {
                     if (boosterActive) {
                         spawnFallingSpore();
-                        if (Math.random() < 0.3) spawnFallingSpore();
+                        // Sometimes spawn multiple for extra effect
+                        if (Math.random() < 0.4) spawnFallingSpore();
+                        if (Math.random() < 0.2) spawnFallingSpore();
                     }
-                }, 300);
+                }, 250); // Spawn every 250ms for denser effect
             }
 
             function stopFallingSpores() {
