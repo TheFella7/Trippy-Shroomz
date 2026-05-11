@@ -22,6 +22,46 @@
     }
     @keyframes cosmicSwirl { 0% { transform: rotate(0deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1.5); } }
     
+    /* Username Modal Styles */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.85); z-index: 2000; display: flex;
+      align-items: center; justify-content: center; backdrop-filter: blur(10px);
+    }
+    .modal-box {
+      background: linear-gradient(135deg, #1a0a2e, #2d1b4e);
+      border: 3px solid #ff69b4; border-radius: 30px; padding: 30px 20px;
+      max-width: 400px; width: 90%; text-align: center;
+      box-shadow: 0 0 50px #ff69b4, 0 0 100px #7B3FE4;
+      animation: modalGlow 2s infinite;
+    }
+    @keyframes modalGlow {
+      0%, 100% { box-shadow: 0 0 30px #ff69b4, 0 0 60px #7B3FE4; }
+      50% { box-shadow: 0 0 60px #ff69b4, 0 0 120px #7B3FE4; }
+    }
+    .modal-title {
+      font-size: 24px; background: linear-gradient(90deg, #ff66ff, #66ffff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      margin-bottom: 10px;
+    }
+    .modal-message {
+      font-size: 13px; color: #ffb3ff; margin: 15px 0; line-height: 1.6;
+      background: rgba(0,0,0,0.4); padding: 12px; border-radius: 15px;
+      border: 1px solid #ff69b4;
+    }
+    .username-input {
+      width: 100%; padding: 12px; margin: 15px 0; border-radius: 30px;
+      border: 2px solid #ff69b4; background: #0f0f1a; color: #fff;
+      font-family: 'Rubik Glitch', cursive; font-size: 18px; text-align: center;
+      outline: none; box-shadow: inset 0 0 15px #7B3FE4;
+    }
+    .username-input::placeholder { color: #6a4a8a; }
+    .save-username-btn {
+      background: linear-gradient(135deg, #ff69b4, #7B3FE4);
+      border: 2px solid #ffb3ff; padding: 12px 30px; font-size: 18px;
+      width: 100%; margin-top: 10px;
+    }
+    
     .wallet-section {
       position: fixed; top: 10px; right: 10px; z-index: 1000;
       display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
@@ -56,6 +96,12 @@
     .title-sub { font-size: 12px; opacity: 0.8; letter-spacing: 4px; color: #b0ffb0; }
     @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
     @keyframes pulseGlow { 0%,100% { filter: drop-shadow(0 0 6px #ff44ff); } 50% { filter: drop-shadow(0 0 22px #00ffff); } }
+    
+    .player-name-display {
+      background: rgba(255,105,180,0.2); border: 1px solid #ff69b4;
+      border-radius: 20px; padding: 5px 15px; margin: 5px 0;
+      font-size: 16px; color: #ffb3ff; display: inline-block;
+    }
     
     .wallet-info {
       background: rgba(123, 63, 228, 0.2); border: 1px solid #7B3FE4; border-radius: 20px;
@@ -152,6 +198,11 @@
       border: 1px solid yellow; border-radius: 10px; margin: 10px 0;
       color: yellow; font-size: 12px;
     }
+    
+    .change-name-link {
+      color: #ff69b4; cursor: pointer; text-decoration: underline;
+      font-size: 12px; margin-top: 8px;
+    }
   </style>
 </head>
 <body>
@@ -161,10 +212,30 @@
   <button class="connect-wallet-btn" id="connectWalletBtn">🔌 Connect Wallet</button>
 </div>
 
+<!-- Username Selection Modal (shown once) -->
+<div class="modal-overlay" id="usernameModal" style="display:none;">
+  <div class="modal-box">
+    <div class="modal-title">✨ Welcome, Traveler! ✨</div>
+    <div style="font-size:40px;">🍄</div>
+    <div class="modal-message">
+      🌌 Choose your cosmic identity...<br><br>
+      <strong>💡 PRO TIP:</strong> Use your <span style="color:#ff9944;">Reddit username</span> or similar social handle so we can reward you through <span style="color:#ff9944;">Reddit & social payouts!</span><br><br>
+      <span style="font-size:11px; color:#ffb3ff;">Your name will be saved forever in the mycelium network</span>
+    </div>
+    <input type="text" class="username-input" id="usernameInput" placeholder="Enter your cosmic name..." maxlength="20" />
+    <button class="save-username-btn" id="saveUsernameBtn">🍄 Join the Trip 🍄</button>
+  </div>
+</div>
+
 <div id="game">
   <div id="title">
     <div class="title-glow">🍄 TRIPPY SHROOMZ · POLYGON 🍄</div>
-    <div class="title-sub">/// WEB3 · NO ETHERS DEPENDENCY ///</div>
+    <div class="title-sub">/// WEB3 · REDDIT READY ///</div>
+  </div>
+  
+  <!-- Player Name Display -->
+  <div class="player-name-display" id="playerNameDisplay" style="display:none;">
+    🧑‍🚀 <span id="playerNameText"></span>
   </div>
   
   <div id="connectionLog"></div>
@@ -225,7 +296,6 @@
 
 <!-- Multiple Ethers.js CDN fallbacks -->
 <script>
-  // Load Ethers.js with fallback CDNs
   (function loadEthers() {
     const cdns = [
       'https://cdnjs.cloudflare.com/ajax/libs/ethers/5.7.2/ethers.umd.min.js',
@@ -233,7 +303,6 @@
       'https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js'
     ];
     
-    let loaded = false;
     const loadingEl = document.getElementById('loadingIndicator');
     if (loadingEl) loadingEl.style.display = 'block';
     
@@ -248,9 +317,7 @@
       script.src = cdns[index];
       script.onload = () => {
         console.log('Ethers loaded from:', cdns[index]);
-        loaded = true;
         if (loadingEl) loadingEl.style.display = 'none';
-        // Initialize game after ethers is loaded
         if (typeof ethers !== 'undefined') {
           initGame();
         }
@@ -267,7 +334,6 @@
 </script>
 
 <script>
-  // ============ GAME INITIALIZATION (runs after ethers loads) ============
   function initGame() {
     "use strict";
 
@@ -278,6 +344,10 @@
     let signer = null;
     let userAddress = null;
     let maticBalance = '0';
+    
+    // Username system
+    let playerName = '';
+    let hasSetName = false;
 
     // Game state
     let spores = 0, shrooms = 0, perClick = 1, autoRate = 0, shroomCost = 100000;
@@ -315,7 +385,12 @@
       maticBalance: document.getElementById("maticBalance"),
       walletInfo: document.getElementById("walletInfo"),
       networkBadge: document.getElementById("networkBadge"),
-      connectionLog: document.getElementById("connectionLog")
+      connectionLog: document.getElementById("connectionLog"),
+      usernameModal: document.getElementById("usernameModal"),
+      usernameInput: document.getElementById("usernameInput"),
+      saveUsernameBtn: document.getElementById("saveUsernameBtn"),
+      playerNameDisplay: document.getElementById("playerNameDisplay"),
+      playerNameText: document.getElementById("playerNameText")
     };
 
     // Logging
@@ -328,13 +403,101 @@
       }
     }
 
-    // ============ WALLET CONNECTION - NO ETHERS DEPENDENCY FOR BASICS ============
+    // ============ USERNAME SYSTEM ============
+    function loadUsername() {
+      try {
+        const saved = localStorage.getItem('trippyShroomz_username');
+        if (saved) {
+          const data = JSON.parse(saved);
+          if (data.walletAddress && data.username) {
+            // Check if this wallet matches
+            if (userAddress && data.walletAddress.toLowerCase() === userAddress.toLowerCase()) {
+              playerName = data.username;
+              hasSetName = true;
+              return true;
+            }
+            // If wallet changed, clear old name
+            if (userAddress && data.walletAddress.toLowerCase() !== userAddress.toLowerCase()) {
+              localStorage.removeItem('trippyShroomz_username');
+              return false;
+            }
+          }
+        }
+      } catch(e) {}
+      return false;
+    }
+
+    function saveUsername() {
+      if (userAddress && playerName) {
+        try {
+          localStorage.setItem('trippyShroomz_username', JSON.stringify({
+            walletAddress: userAddress,
+            username: playerName,
+            timestamp: Date.now()
+          }));
+        } catch(e) {}
+      }
+    }
+
+    function showUsernameModal() {
+      if (el.usernameModal) {
+        el.usernameModal.style.display = 'flex';
+        if (el.usernameInput) {
+          el.usernameInput.value = '';
+          el.usernameInput.focus();
+        }
+      }
+    }
+
+    function hideUsernameModal() {
+      if (el.usernameModal) {
+        el.usernameModal.style.display = 'none';
+      }
+    }
+
+    function setPlayerName(name) {
+      if (!name || name.trim().length === 0) {
+        alert('🍄 Please enter a cosmic name, traveler!');
+        return false;
+      }
+      
+      const trimmedName = name.trim().substring(0, 20);
+      playerName = trimmedName;
+      hasSetName = true;
+      
+      saveUsername();
+      hideUsernameModal();
+      updatePlayerNameDisplay();
+      render();
+      
+      log(`✅ Player name set: ${playerName}`);
+      addChatMessage("🍄 ShroomBot", `${playerName} has joined the mycelium network! 🍄✨`, true);
+      
+      return true;
+    }
+
+    function updatePlayerNameDisplay() {
+      if (playerName && el.playerNameDisplay && el.playerNameText) {
+        el.playerNameDisplay.style.display = 'inline-block';
+        el.playerNameText.textContent = playerName;
+      } else if (el.playerNameDisplay) {
+        el.playerNameDisplay.style.display = 'none';
+      }
+    }
+
+    function changePlayerName() {
+      const newName = prompt('🍄 Enter your new cosmic name (max 20 chars):\n\n💡 Use your Reddit username for reward payouts!', playerName);
+      if (newName && newName.trim().length > 0) {
+        setPlayerName(newName);
+      }
+    }
+
+    // ============ WALLET CONNECTION ============
     async function connectWallet() {
       log('🔍 Starting wallet connection...');
       
       if (el.connectionLog) el.connectionLog.innerHTML = '';
       
-      // Find provider
       let ethereum = null;
       
       if (window.ethereum) {
@@ -352,31 +515,18 @@
         return;
       }
       
-      // Log provider details
-      log(`isMetaMask: ${ethereum.isMetaMask}`);
-      log(`isTrust: ${ethereum.isTrust}`);
-      log(`isTrustWallet: ${ethereum.isTrustWallet}`);
-      
       try {
-        // Request accounts
-        log('📝 Requesting accounts...');
-        
         let accounts;
         
         if (ethereum.request) {
-          log('Using ethereum.request');
           accounts = await ethereum.request({ method: 'eth_requestAccounts' });
         } else if (ethereum.enable) {
-          log('Using ethereum.enable');
           accounts = await ethereum.enable();
         } else if (ethereum.send) {
-          log('Using ethereum.send');
           accounts = await ethereum.send('eth_requestAccounts');
         } else {
           throw new Error('No method to request accounts');
         }
-        
-        log(`Accounts: ${accounts?.length || 0}`);
         
         if (!accounts || accounts.length === 0) {
           throw new Error('No accounts');
@@ -385,13 +535,9 @@
         userAddress = accounts[0];
         log(`✅ Connected: ${userAddress.substring(0, 10)}...`);
         
-        // Create ethers provider (now ethers is guaranteed to be loaded)
-        log('Creating ethers provider...');
         provider = new ethers.providers.Web3Provider(ethereum);
         signer = provider.getSigner();
-        log('✅ Ethers provider created');
         
-        // Check network
         const network = await provider.getNetwork();
         log(`Network: ${network.name} (${network.chainId})`);
         
@@ -402,7 +548,6 @@
               method: 'wallet_switchEthereumChain',
               params: [{ chainId: '0x89' }],
             });
-            log('✅ Switched to Polygon');
           } catch (switchError) {
             if (switchError.code === 4902) {
               await ethereum.request({
@@ -415,15 +560,12 @@
                   blockExplorerUrls: ['https://polygonscan.com/']
                 }]
               });
-              log('✅ Added Polygon');
             }
           }
         }
         
-        // Get balance
         await updateBalance();
         
-        // Update UI
         el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
         el.walletInfo.style.display = 'flex';
         el.connectWalletBtn.textContent = '✅ Connected';
@@ -432,7 +574,18 @@
         
         log('🎉 Success!');
         
-        // Listeners
+        // Load username or show modal
+        const hasExistingName = loadUsername();
+        updatePlayerNameDisplay();
+        
+        if (!hasExistingName) {
+          log('📝 No existing username, showing modal...');
+          setTimeout(() => showUsernameModal(), 1000);
+        } else {
+          log(`✅ Welcome back, ${playerName}!`);
+          addChatMessage("🍄 ShroomBot", `Welcome back, ${playerName}! 🍄✨`, true);
+        }
+        
         ethereum.on('accountsChanged', (newAccounts) => {
           if (newAccounts.length === 0) {
             disconnectWallet();
@@ -440,6 +593,10 @@
             userAddress = newAccounts[0];
             el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
             updateBalance();
+            // Check if username matches new account
+            if (!loadUsername()) {
+              showUsernameModal();
+            }
             render();
           }
         });
@@ -460,12 +617,15 @@
       provider = null;
       signer = null;
       maticBalance = '0';
+      playerName = '';
+      hasSetName = false;
       el.walletAddress.textContent = 'Not connected';
       el.maticBalance.textContent = '0 MATIC';
       el.walletInfo.style.display = 'none';
       el.connectWalletBtn.textContent = '🔌 Connect Wallet';
       el.connectWalletBtn.style.background = 'linear-gradient(135deg, #7B3FE4, #4A90E2)';
       el.networkBadge.textContent = '⛓️ Polygon';
+      updatePlayerNameDisplay();
       render();
     }
 
@@ -512,7 +672,7 @@
     }
 
     // ============ GAME FUNCTIONS ============
-    const SAVE_KEY = 'trippyShroomzSave_v9';
+    const SAVE_KEY = 'trippyShroomzSave_v10';
     
     function saveGame() {
       try { 
@@ -681,7 +841,8 @@
     function sendChatMessage() {
       const text = el.chatInput.value.trim();
       if (!text) return;
-      addChatMessage(userAddress ? `${userAddress.substring(0, 4)}...` : "Anon", text, false);
+      const displayName = playerName || (userAddress ? `${userAddress.substring(0, 4)}...` : "Anon");
+      addChatMessage(displayName, text, false);
       el.chatInput.value = '';
       setTimeout(() => {
         if (Math.random() > 0.3) {
@@ -718,11 +879,13 @@
 
       const multVal = getMult();
       el.profile.innerHTML = `<div style="font-size:20px;">🌀 TRIP STATS</div>
+        ${playerName ? `<div style="font-size:18px; color:#ffb3ff; margin:5px 0;">🧑‍🚀 ${playerName}</div>` : ''}
         <div>⚡ Spores/sec: ${(autoRate * multVal * (boosterActive ? 4 : 1)).toFixed(2)}</div>
         <div>👆 Click: ${perClick}</div>
         <div>✨ Multi: x${multVal.toFixed(2)}</div>
         <div>🔥 Tap: ${tapVal.toFixed(1)}</div>
         <div>🍄 Shrooms: ${shrooms}</div>
+        ${playerName ? `<div class="change-name-link" onclick="window.changePlayerName()">✏️ Change cosmic name</div>` : ''}
         <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:10px; width:100%;">💎 Send 0.01 MATIC</button>`;
       
       let upHtml = `<div style="font-size:18px;">⬆️ UPGRADES</div>`;
@@ -757,6 +920,7 @@
       
       renderChat();
       if (userAddress) updateBalance();
+      updatePlayerNameDisplay();
     }
 
     // Exports
@@ -764,11 +928,23 @@
     window.gameBuyMax = buyMax;
     window.buyShroom = buyShroom;
     window.sendMaticPayment = () => sendPayment('0.01');
+    window.changePlayerName = changePlayerName;
 
     // Events
     el.connectWalletBtn.addEventListener('click', connectWallet);
     el.sendChatBtn.addEventListener('click', sendChatMessage);
     el.chatInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendChatMessage(); });
+    
+    // Username modal events
+    el.saveUsernameBtn.addEventListener('click', () => {
+      setPlayerName(el.usernameInput.value);
+    });
+    
+    el.usernameInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        setPlayerName(el.usernameInput.value);
+      }
+    });
 
     document.querySelectorAll(".tab").forEach(tab => {
       tab.addEventListener("click", () => {
