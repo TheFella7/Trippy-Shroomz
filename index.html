@@ -1,0 +1,890 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0, viewport-fit=cover">
+  <title>🍄 TRIPPY SHROOMZ · POLYGON WEB3</title>
+  <link href="https://fonts.googleapis.com/css2?family=Rubik+Glitch&display=swap" rel="stylesheet">
+  <style>
+    /* === All original styles preserved === */
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; background: black; display: flex; align-items: center; justify-content: center;
+      font-family: 'Rubik Glitch', cursive; color: white; user-select: none; -webkit-user-select: none; overflow-x: hidden;
+    }
+    body::before {
+      content: ""; position: fixed; width: 300%; height: 300%; top: -100%; left: -100%;
+      background: radial-gradient(circle at 20% 30%, #ff00ff, transparent 35%),
+                  radial-gradient(circle at 80% 20%, #00ffff, transparent 35%),
+                  radial-gradient(circle at 30% 80%, #39ff14, transparent 35%),
+                  radial-gradient(circle at 70% 70%, #ffcc00, transparent 35%),
+                  radial-gradient(circle at 50% 50%, #ff0033, transparent 40%);
+      animation: cosmicSwirl 18s linear infinite; filter: blur(45px) saturate(2.2); z-index: -2; opacity: 0.65;
+    }
+    @keyframes cosmicSwirl { 0% { transform: rotate(0deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1.5); } }
+    
+    /* Wallet Connect Button - Mobile optimized */
+    .wallet-section {
+      position: fixed; top: 10px; right: 10px; z-index: 1000;
+      display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+    }
+    .connect-wallet-btn {
+      background: linear-gradient(135deg, #7B3FE4, #4A90E2);
+      border: 2px solid #00ff88; border-radius: 50px; padding: 10px 18px;
+      font-family: 'Rubik Glitch', cursive; font-size: 14px; color: white;
+      cursor: pointer; box-shadow: 0 0 15px #7B3FE4; transition: 0.3s;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .connect-wallet-btn:hover {
+      box-shadow: 0 0 25px #00ff88; transform: scale(1.05);
+    }
+    .network-badge {
+      background: #0f0f1a; border: 1px solid #7B3FE4; border-radius: 30px;
+      padding: 6px 14px; font-size: 11px; color: #b3b3ff;
+    }
+    
+    #game {
+      width: 440px; max-width: 96vw; background: rgba(5, 5, 10, 0.35); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 255, 100, 0.3); border-radius: 32px; padding: 16px 12px 20px; box-shadow: 0 0 40px rgba(255, 0, 255, 0.3);
+      margin: 60px auto 15px; text-align: center;
+    }
+    #title { margin-bottom: 6px; }
+    .title-glow {
+      font-size: 23px; font-weight: 800; letter-spacing: 2px;
+      background: linear-gradient(90deg, #ff66ff, #66ffff, #aaff00, #ffbb00, #ff66ff); background-size: 300% 300%;
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+      animation: gradientMove 6s ease infinite, pulseGlow 2.2s infinite; text-shadow: 0 0 12px magenta;
+    }
+    .title-sub { font-size: 12px; opacity: 0.8; letter-spacing: 4px; color: #b0ffb0; }
+    @keyframes gradientMove { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes pulseGlow { 0%,100% { filter: drop-shadow(0 0 6px #ff44ff); } 50% { filter: drop-shadow(0 0 22px #00ffff); } }
+    
+    .wallet-info {
+      background: rgba(123, 63, 228, 0.2); border: 1px solid #7B3FE4; border-radius: 20px;
+      padding: 8px 14px; margin: 8px 0; font-size: 11px; display: flex;
+      justify-content: space-between; align-items: center; word-break: break-all; flex-wrap: wrap; gap: 5px;
+    }
+    
+    #serverStats {
+      font-size: 12px; background: #0a0f0a; display: inline-block; padding: 4px 14px; border-radius: 30px; margin: 6px 0 10px;
+      border: 1px solid #0f0; color: #cfc; letter-spacing: 0.5px; backdrop-filter: blur(4px);
+    }
+    #character {
+      font-size: 100px; cursor: pointer; display: inline-block; filter: drop-shadow(0 0 20px #39ff14); animation: idleWobble 1.2s infinite;
+      transition: transform 0.05s; -webkit-tap-highlight-color: transparent; outline: none; margin: 5px 0;
+    }
+    #character:active { animation: trippyActive 0.22s infinite; filter: drop-shadow(0 0 40px #ff00ff); }
+    @keyframes idleWobble { 0% { transform: rotate(-5deg); } 50% { transform: rotate(7deg) translateY(-5px); } 100% { transform: rotate(-5deg); } }
+    @keyframes trippyActive { 0% { transform: rotate(-12deg) scale(1.1); } 50% { transform: rotate(12deg) translateY(-14px) scale(1.25); } 100% { transform: rotate(-12deg) scale(1.1); } }
+    
+    .mushroom-stats { margin: 8px 0 4px; font-size: 16px; text-shadow: 0 0 6px black; }
+    .per-tap {
+      background: rgba(20, 40, 20, 0.7); padding: 6px 12px; border-radius: 40px; display: inline-block;
+      border: 1px solid #9f9; backdrop-filter: blur(4px); margin-bottom: 8px;
+    }
+    .booster-box {
+      background: rgba(30, 10, 30, 0.8); border: 1.5px solid #ff69b4; border-radius: 40px; padding: 10px 15px;
+      margin: 6px 0 12px; backdrop-filter: blur(8px); box-shadow: 0 0 20px #ff44aa66;
+    }
+    .booster-title { font-size: 18px; color: #ffb3ff; display: flex; align-items: center; justify-content: center; gap: 8px; }
+    .progress-bar-container { background: #1a1a2a; height: 18px; border-radius: 30px; margin: 10px 0 6px; border: 1px solid #ff99cc; overflow: hidden; }
+    .progress-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ff66b2, #ff3399); box-shadow: 0 0 10px #ff66b2; transition: width 0.1s; }
+    .booster-timer { font-size: 22px; font-weight: bold; color: #ffffaa; text-shadow: 0 0 10px #ffaa00; }
+    .click-counter { font-size: 15px; color: #cfc; }
+    #spores, #shrooms { font-size: 18px; margin: 5px 0; text-shadow: 0 0 8px black; }
+    
+    .tab-bar { display: flex; flex-wrap: wrap; justify-content: center; gap: 5px; margin: 15px 0 8px; }
+    .tab {
+      background: #0b1a0b; padding: 7px 10px; font-size: 12px; border-radius: 30px; border: 1px solid #1f9; color: #9f9;
+      cursor: pointer; transition: 0.2s; box-shadow: 0 0 5px #0f0; backdrop-filter: blur(4px);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .tab.active { background: #1f9; color: #000; font-weight: bold; box-shadow: 0 0 18px #7f7; }
+    
+    .panel {
+      display: none; background: rgba(0, 10, 0, 0.3); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      padding: 15px 10px; border-radius: 24px; border: 1px solid #3f6; margin-top: 10px; text-align: left;
+    }
+    .panel.active { display: block; }
+    
+    button {
+      background: #0f1a0f; border: 1.5px solid #3f9; color: #bfb; padding: 10px 16px; margin: 6px 3px; border-radius: 40px;
+      font-family: 'Rubik Glitch', cursive; font-size: 14px; cursor: pointer; box-shadow: 0 0 8px #1f6; transition: 0.15s;
+      letter-spacing: 0.8px; backdrop-filter: blur(4px); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    button:hover { background: #1f3; color: black; border-color: white; box-shadow: 0 0 20px #8f8; }
+    button:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; background: #1a2a1a; }
+    
+    .upgrade-card { background: #0a120a; padding: 12px; margin: 10px 0; border-radius: 20px; border-left: 5px solid #0f0; box-shadow: 0 0 12px #1f3; }
+    .max-buy-info { font-size: 15px; background: #1a2a1a; padding: 4px 10px; border-radius: 20px; display: inline-block; margin: 5px 0; color: #cfc; }
+    .button-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+    .prestige-block { text-align: center; font-size: 18px; }
+    .shroom-gain { font-size: 24px; color: #ffb3ff; text-shadow: 0 0 12px magenta; }
+    .save-indicator { font-size: 11px; margin-top: 12px; opacity: 0.7; color: #afa; }
+    
+    #chatContainer {
+      margin-top: 18px; background: rgba(0, 10, 0, 0.25); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+      border: 1px solid #3f6; border-radius: 20px; padding: 12px 10px; text-align: left; box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
+    }
+    .chat-title { font-size: 14px; color: #bfb; margin-bottom: 8px; letter-spacing: 2px; display: flex; align-items: center; gap: 6px; }
+    #chatMessages {
+      height: 120px; overflow-y: auto; background: #0a120a; border-radius: 16px; padding: 8px 10px; margin-bottom: 8px;
+      border: 1px solid #2a6a2a; font-size: 12px; line-height: 1.4; scroll-behavior: smooth;
+    }
+    .chat-message { margin: 4px 0; word-break: break-word; }
+    .chat-user { color: #8f8; font-weight: bold; }
+    .chat-bot { color: #f9f; }
+    .chat-time { color: #6a6; font-size: 9px; margin-right: 5px; }
+    .chat-input-area { display: flex; gap: 6px; }
+    #chatInput {
+      flex: 1; background: #0f1a0f; border: 1px solid #3f9; border-radius: 30px; padding: 10px 14px;
+      font-family: 'Rubik Glitch', cursive; font-size: 13px; color: #bfb; outline: none; box-shadow: inset 0 0 6px #1f3;
+    }
+    #chatInput::placeholder { color: #6a8a6a; opacity: 0.7; }
+    #sendChatBtn { padding: 10px 16px; margin: 0; }
+    
+    /* Deep link button for mobile wallets */
+    .deep-link-section {
+      text-align: center; margin: 10px 0; display: none;
+    }
+    .deep-link-btn {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      border: 2px solid #ffa502; padding: 12px 24px;
+      font-size: 16px; animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { box-shadow: 0 0 10px #ff6b6b; }
+      50% { box-shadow: 0 0 30px #ffa502; }
+      100% { box-shadow: 0 0 10px #ff6b6b; }
+    }
+  </style>
+  
+  <!-- Ethers.js for Polygon -->
+  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
+</head>
+<body>
+
+<!-- Wallet Connection UI -->
+<div class="wallet-section">
+  <div class="network-badge" id="networkBadge">⛓️ Polygon</div>
+  <button class="connect-wallet-btn" id="connectWalletBtn">🔌 Connect Wallet</button>
+</div>
+
+<div id="game">
+  <div id="title">
+    <div class="title-glow">🍄 TRIPPY SHROOMZ · POLYGON 🍄</div>
+    <div class="title-sub">/// WEB3 · TRUST WALLET READY ///</div>
+  </div>
+  
+  <!-- Wallet Info -->
+  <div class="wallet-info" id="walletInfo" style="display:none;">
+    <span>👛 <span id="walletAddress">Not connected</span></span>
+    <span>💰 <span id="maticBalance">0 MATIC</span></span>
+  </div>
+  
+  <!-- Deep Link Section for Mobile -->
+  <div class="deep-link-section" id="deepLinkSection">
+    <button class="deep-link-btn" onclick="window.openDeepLink()">
+      📱 Open in Trust Wallet
+    </button>
+    <p style="font-size:11px; margin-top:5px;">Tap if wallet doesn't connect automatically</p>
+  </div>
+  
+  <div id="serverStats"></div>
+
+  <!-- MUSHROOM & STATS -->
+  <div id="character">🍄</div>
+
+  <div class="mushroom-stats">
+    <div class="per-tap" id="perTapDisplay">✨ per tap: 1</div>
+  </div>
+
+  <!-- SPORE x4 BOOSTER -->
+  <div class="booster-box" id="boosterBox">
+    <div class="booster-title">
+      <span>🔥 SPORE x4 BOOSTER 🔥</span>
+    </div>
+    <div id="boosterContent"></div>
+  </div>
+
+  <div id="spores">✨ Spores: 0</div>
+  <div id="shrooms">🍄 Shrooms: 0</div>
+
+  <div class="tab-bar">
+    <div class="tab active" data-tab="profile">🧬 Profile</div>
+    <div class="tab" data-tab="upgrades">⬆️ Upgrades</div>
+    <div class="tab" data-tab="achievements">🏆 Achievements</div>
+    <div class="tab" data-tab="prestige">🌀 Prestige</div>
+    <div class="tab" data-tab="leaderboard">🌐 Leaderboard</div>
+    <div class="tab" data-tab="shop">🛸 Shop</div>
+  </div>
+
+  <div id="profile" class="panel active"></div>
+  <div id="upgrades" class="panel"></div>
+  <div id="achievements" class="panel"><div style="text-align:center; padding:20px;">🌈 achievements · coming soon 🌈</div></div>
+  <div id="prestige" class="panel"></div>
+  <div id="leaderboard" class="panel">🌀 Leaderboard: cosmic vibes soon</div>
+  <div id="shop" class="panel">🛒 Shop: interdimensional deals soon</div>
+
+  <div id="chatContainer">
+    <div class="chat-title">
+      <span>💬 TRIPPY CHAT · ONLINE PLAYERS</span>
+      <span style="margin-left:auto; font-size:11px;" id="chatOnlineCount">2 online</span>
+    </div>
+    <div id="chatMessages"></div>
+    <div class="chat-input-area">
+      <input type="text" id="chatInput" placeholder="say something trippy..." maxlength="60" />
+      <button id="sendChatBtn">Send</button>
+    </div>
+  </div>
+  <div class="save-indicator" id="saveIndicator">💾 game auto‑saves</div>
+</div>
+
+<script>
+  (function(){
+    "use strict";
+
+    // ============ POLYGON MAINNET CONFIGURATION ============
+    const POLYGON_CHAIN_ID = 137;
+    const POLYGON_RPC_URL = 'https://polygon-rpc.com';
+    const PAYMENT_ADDRESS = '0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
+    
+    // Web3 state
+    let provider = null;
+    let signer = null;
+    let userAddress = null;
+    let maticBalance = '0';
+    
+    // ============ GAME STATE ============
+    let spores = 0;
+    let shrooms = 0;
+    let perClick = 1;
+    let autoRate = 0;
+    let shroomCost = 100000;
+
+    const upgrades = {
+      click: { name: "🍄 Click Power", cost: 20, owned: 0, mult: 1.15, baseCost: 20 },
+      auto: { name: "🤖 Auto Forager", cost: 50, owned: 0, mult: 1.15, baseCost: 50 }
+    };
+
+    const getMult = () => 1 + shrooms * 0.1;
+
+    // ----- BOOSTER SYSTEM -----
+    let boosterClicks = 0;
+    let boosterActive = false;
+    let boosterEndTime = 0;
+    const BOOSTER_DURATION = 15000;
+    const BOOSTER_REQUIRED = 50;
+
+    function getPerTapAmount() {
+      let base = perClick * getMult();
+      return boosterActive ? base * 4 : base;
+    }
+
+    // DOM elements
+    const el = {
+      spores: document.getElementById("spores"),
+      shrooms: document.getElementById("shrooms"),
+      char: document.getElementById("character"),
+      server: document.getElementById("serverStats"),
+      profile: document.getElementById("profile"),
+      upgradesDiv: document.getElementById("upgrades"),
+      prestigeDiv: document.getElementById("prestige"),
+      saveIndicator: document.getElementById("saveIndicator"),
+      perTapDisplay: document.getElementById("perTapDisplay"),
+      boosterContent: document.getElementById("boosterContent"),
+      chatMessages: document.getElementById("chatMessages"),
+      chatInput: document.getElementById("chatInput"),
+      sendChatBtn: document.getElementById("sendChatBtn"),
+      chatOnlineCount: document.getElementById("chatOnlineCount"),
+      connectWalletBtn: document.getElementById("connectWalletBtn"),
+      walletAddress: document.getElementById("walletAddress"),
+      maticBalance: document.getElementById("maticBalance"),
+      walletInfo: document.getElementById("walletInfo"),
+      networkBadge: document.getElementById("networkBadge"),
+      deepLinkSection: document.getElementById("deepLinkSection")
+    };
+
+    // ============ DETECT MOBILE & WALLET ============
+    function isMobileDevice() {
+      return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
+    }
+
+    function detectWallet() {
+      const userAgent = navigator.userAgent.toLowerCase();
+      
+      if (userAgent.includes('trust')) {
+        return 'trustwallet';
+      } else if (userAgent.includes('metamask')) {
+        return 'metamask';
+      } else if (userAgent.includes('coinbase')) {
+        return 'coinbase';
+      } else if (window.ethereum?.isTrust) {
+        return 'trustwallet';
+      } else if (window.ethereum?.isMetaMask) {
+        return 'metamask';
+      } else if (window.ethereum?.isCoinbaseWallet) {
+        return 'coinbase';
+      }
+      return 'unknown';
+    }
+
+    // ============ WALLET CONNECTION (Multiple methods) ============
+    async function connectWallet() {
+      const walletType = detectWallet();
+      console.log('Detected wallet:', walletType);
+      
+      try {
+        // Method 1: Standard ethereum provider
+        if (window.ethereum) {
+          await connectWithProvider(window.ethereum);
+          return;
+        }
+        
+        // Method 2: Trust Wallet specific (window.trustwallet)
+        if (window.trustwallet) {
+          await connectWithProvider(window.trustwallet);
+          return;
+        }
+        
+        // Method 3: Try web3 provider
+        if (window.web3?.currentProvider) {
+          await connectWithProvider(window.web3.currentProvider);
+          return;
+        }
+        
+        // No wallet found
+        if (isMobileDevice()) {
+          // Show deep link option for mobile
+          el.deepLinkSection.style.display = 'block';
+          alert('📱 Please open this page inside Trust Wallet or MetaMask app browser!\n\nOr tap "Open in Trust Wallet" button below.');
+        } else {
+          alert('🦊 Please install MetaMask or Trust Wallet extension!\n\nGet it at: metamask.io or trustwallet.com');
+        }
+        
+      } catch (error) {
+        console.error('Connection error:', error);
+        
+        if (isMobileDevice() && !window.ethereum) {
+          el.deepLinkSection.style.display = 'block';
+          alert('📱 No wallet detected! Open this in Trust Wallet or MetaMask app.');
+        }
+      }
+    }
+
+    async function connectWithProvider(ethereumProvider) {
+      try {
+        // Request accounts
+        const accounts = await ethereumProvider.request({ 
+          method: 'eth_requestAccounts' 
+        });
+        
+        if (!accounts || accounts.length === 0) {
+          throw new Error('No accounts found');
+        }
+        
+        userAddress = accounts[0];
+        
+        // Initialize ethers
+        provider = new ethers.providers.Web3Provider(ethereumProvider);
+        signer = provider.getSigner();
+        
+        // Get current chain ID
+        const chainId = await ethereumProvider.request({ method: 'eth_chainId' });
+        const currentChainId = parseInt(chainId, 16);
+        
+        console.log('Current chain:', currentChainId);
+        
+        // Switch to Polygon if needed
+        if (currentChainId !== POLYGON_CHAIN_ID) {
+          await switchToPolygon(ethereumProvider);
+        }
+        
+        // Update UI
+        await updateBalance();
+        el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+        el.walletInfo.style.display = 'flex';
+        el.connectWalletBtn.textContent = '✅ Connected';
+        el.networkBadge.textContent = '⛓️ Polygon';
+        el.deepLinkSection.style.display = 'none';
+        
+        // Setup event listeners
+        setupWalletListeners(ethereumProvider);
+        
+        console.log('✅ Connected:', userAddress);
+        
+      } catch (error) {
+        console.error('Provider connection error:', error);
+        throw error;
+      }
+    }
+
+    async function switchToPolygon(ethereumProvider) {
+      try {
+        await ethereumProvider.request({
+          method: 'wallet_switchEthereumChain',
+          params: [{ chainId: '0x89' }],
+        });
+      } catch (switchError) {
+        if (switchError.code === 4902) {
+          await ethereumProvider.request({
+            method: 'wallet_addEthereumChain',
+            params: [{
+              chainId: '0x89',
+              chainName: 'Polygon Mainnet',
+              nativeCurrency: {
+                name: 'MATIC',
+                symbol: 'MATIC',
+                decimals: 18
+              },
+              rpcUrls: [POLYGON_RPC_URL],
+              blockExplorerUrls: ['https://polygonscan.com/']
+            }]
+          });
+        }
+      }
+    }
+
+    function setupWalletListeners(ethereumProvider) {
+      ethereumProvider.on('accountsChanged', (newAccounts) => {
+        if (newAccounts.length === 0) {
+          disconnectWallet();
+        } else {
+          userAddress = newAccounts[0];
+          el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+          updateBalance();
+          render();
+        }
+      });
+      
+      ethereumProvider.on('chainChanged', (chainId) => {
+        const newChainId = parseInt(chainId, 16);
+        if (newChainId !== POLYGON_CHAIN_ID) {
+          el.networkBadge.textContent = '⚠️ Wrong Network';
+          alert('Please switch to Polygon Mainnet in your wallet!');
+        } else {
+          el.networkBadge.textContent = '⛓️ Polygon';
+          updateBalance();
+        }
+      });
+      
+      ethereumProvider.on('disconnect', () => {
+        disconnectWallet();
+      });
+    }
+
+    function disconnectWallet() {
+      userAddress = null;
+      provider = null;
+      signer = null;
+      maticBalance = '0';
+      el.walletAddress.textContent = 'Not connected';
+      el.maticBalance.textContent = '0 MATIC';
+      el.walletInfo.style.display = 'none';
+      el.connectWalletBtn.textContent = '🔌 Connect Wallet';
+      render();
+    }
+
+    async function updateBalance() {
+      if (!provider || !userAddress) return;
+      try {
+        const balance = await provider.getBalance(userAddress);
+        maticBalance = ethers.utils.formatEther(balance);
+        el.maticBalance.textContent = `${parseFloat(maticBalance).toFixed(3)} MATIC`;
+      } catch (error) {
+        console.error('Balance error:', error);
+      }
+    }
+
+    // ============ DEEP LINK FOR MOBILE WALLETS ============
+    function openDeepLink() {
+      const currentUrl = window.location.href;
+      
+      // Try multiple deep link formats
+      const deepLinks = [
+        `https://link.trustwallet.com/open_url?coin_id=966&url=${encodeURIComponent(currentUrl)}`,
+        `https://metamask.app.link/dapp/${window.location.hostname}${window.location.pathname}`,
+        `trust://browser?url=${encodeURIComponent(currentUrl)}`,
+        `dapp://${window.location.hostname}${window.location.pathname}`
+      ];
+      
+      // Try first deep link, fallback to others
+      const link = deepLinks[0];
+      
+      if (isMobileDevice()) {
+        window.location.href = link;
+        
+        // Fallback after 2 seconds
+        setTimeout(() => {
+          if (document.hidden) return; // If app opened successfully
+          alert('Opening wallet app... If nothing happens, please copy this URL and open in Trust Wallet browser:\n\n' + currentUrl);
+        }, 2000);
+      }
+    }
+    window.openDeepLink = openDeepLink;
+
+    // ============ SEND PAYMENT ============
+    async function sendPayment(amountInMatic = '0.01') {
+      if (!signer) {
+        alert('❌ Please connect your wallet first!');
+        return false;
+      }
+      
+      try {
+        const tx = await signer.sendTransaction({
+          to: PAYMENT_ADDRESS,
+          value: ethers.utils.parseEther(amountInMatic)
+        });
+        
+        alert(`✅ Payment sent! TX: ${tx.hash.substring(0, 10)}...`);
+        await tx.wait();
+        
+        grantPremiumBenefits();
+        return true;
+      } catch (error) {
+        console.error('Payment error:', error);
+        alert('❌ Payment failed: ' + (error.message || 'Unknown error'));
+        return false;
+      }
+    }
+
+    function grantPremiumBenefits() {
+      perClick += 5;
+      autoRate += 2;
+      spores += 10000;
+      alert('🎉 Premium activated! +5 Power, +2 Auto, +10K Spores');
+      saveGame();
+      render();
+    }
+
+    // ============ GAME FUNCTIONS ============
+    const SAVE_KEY = 'trippyShroomzSave_v6';
+    
+    function saveGame() {
+      const saveData = {
+        spores, shrooms, perClick, autoRate, shroomCost,
+        upgrades: {
+          click: { cost: upgrades.click.cost, owned: upgrades.click.owned },
+          auto: { cost: upgrades.auto.cost, owned: upgrades.auto.owned }
+        },
+        lastUpdated: Date.now()
+      };
+      localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
+      if (el.saveIndicator) {
+        el.saveIndicator.style.opacity = '1';
+        setTimeout(() => el.saveIndicator.style.opacity = '0.7', 200);
+      }
+    }
+    
+    function loadGame() {
+      const saved = localStorage.getItem(SAVE_KEY);
+      if (!saved) return false;
+      try {
+        const data = JSON.parse(saved);
+        spores = data.spores ?? 0;
+        shrooms = data.shrooms ?? 0;
+        perClick = data.perClick ?? 1;
+        autoRate = data.autoRate ?? 0;
+        shroomCost = data.shroomCost ?? 100000;
+        if (data.upgrades) {
+          if (data.upgrades.click) {
+            upgrades.click.cost = data.upgrades.click.cost ?? 20;
+            upgrades.click.owned = data.upgrades.click.owned ?? 0;
+          }
+          if (data.upgrades.auto) {
+            upgrades.auto.cost = data.upgrades.auto.cost ?? 50;
+            upgrades.auto.owned = data.upgrades.auto.owned ?? 0;
+          }
+        }
+        return true;
+      } catch (e) { return false; }
+    }
+
+    function gainSpores() {
+      let amount = perClick * getMult();
+      if (boosterActive) amount *= 4;
+      spores += amount;
+      saveGame();
+      render();
+    }
+
+    function handleMushroomClick(e) {
+      if (boosterActive) {
+        boosterEndTime = Date.now() + BOOSTER_DURATION;
+      } else {
+        boosterClicks = Math.min(boosterClicks + 1, BOOSTER_REQUIRED);
+        if (boosterClicks >= BOOSTER_REQUIRED) {
+          boosterActive = true;
+          boosterClicks = 0;
+          boosterEndTime = Date.now() + BOOSTER_DURATION;
+        }
+      }
+      gainSpores();
+      render();
+    }
+
+    let holdInterval = null;
+    let isHolding = false;
+    
+    function startHold(e) {
+      e.preventDefault();
+      if (isHolding) return;
+      isHolding = true;
+      gainSpores();
+      holdInterval = setInterval(() => gainSpores(), 120);
+    }
+    
+    function stopHold() {
+      if (isHolding) {
+        clearInterval(holdInterval);
+        isHolding = false;
+      }
+    }
+
+    // Touch events for mobile
+    el.char.addEventListener("mousedown", startHold);
+    el.char.addEventListener("touchstart", (e) => {
+      e.preventDefault();
+      startHold(e);
+    });
+    document.addEventListener("mouseup", stopHold);
+    document.addEventListener("touchend", stopHold);
+    el.char.addEventListener("click", handleMushroomClick);
+    el.char.addEventListener("contextmenu", (e) => e.preventDefault());
+
+    setInterval(() => {
+      if (boosterActive && Date.now() > boosterEndTime) {
+        boosterActive = false;
+        boosterEndTime = 0;
+      }
+      if (autoRate > 0) {
+        let gain = autoRate * getMult();
+        if (boosterActive) gain *= 4;
+        spores += gain;
+        saveGame();
+      }
+      render();
+    }, 1000);
+
+    function buy(upgradeKey) {
+      const u = upgrades[upgradeKey];
+      if (!u || spores < u.cost) return;
+      spores -= u.cost;
+      u.owned++;
+      if (upgradeKey === "click") perClick++;
+      if (upgradeKey === "auto") autoRate++;
+      u.cost = Math.floor(u.cost * u.mult);
+      saveGame();
+      render();
+    }
+    
+    function buyMax(upgradeKey) {
+      const u = upgrades[upgradeKey];
+      if (!u) return;
+      let count = 0, tempSpores = spores, nextCost = u.cost;
+      while (tempSpores >= nextCost) {
+        tempSpores -= nextCost;
+        count++;
+        nextCost = Math.floor(nextCost * u.mult);
+      }
+      if (count === 0) return;
+      spores = tempSpores;
+      u.owned += count;
+      if (upgradeKey === "click") perClick += count;
+      if (upgradeKey === "auto") autoRate += count;
+      u.cost = nextCost;
+      saveGame();
+      render();
+    }
+
+    function buyShroom() {
+      if (spores < shroomCost) return;
+      spores -= shroomCost;
+      shrooms++;
+      shroomCost = Math.floor(shroomCost * 1.15);
+      saveGame();
+      render();
+    }
+
+    function getOnline() { return Math.floor(120 + Math.sin(Date.now() / 4000) * 30); }
+    function getTotalPlayers() {
+      let stored = localStorage.getItem("tp_trippy_v3");
+      if (!stored) { stored = 12500 + Math.floor(Math.random()*800); localStorage.setItem("tp_trippy_v3", stored); }
+      return stored;
+    }
+
+    let chatMessages = [
+      { user: "🍄 ShroomBot", text: "Welcome to Web3 Trip! ✨", isBot: true, timestamp: Date.now() - 30000 },
+      { user: "CosmicWanderer", text: "anyone seeing colors? 🌈", isBot: false, timestamp: Date.now() - 15000 }
+    ];
+    const botReplies = ["the mushrooms speak 🍄","vibe check ✅","max power! 💪","polygon fast ⚡","fractals everywhere!","shroom multiplier!","max buy 🔥","hypnotic game","web3 gaming 🚀","trust wallet connected!"];
+    
+    function addChatMessage(user, text, isBot = false) {
+      chatMessages.push({ user, text, isBot, timestamp: Date.now() });
+      if (chatMessages.length > 30) chatMessages.shift();
+      renderChat();
+    }
+    
+    function renderChat() {
+      if (!el.chatMessages) return;
+      let html = '';
+      chatMessages.slice().reverse().forEach(msg => {
+        const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        html += `<div class="chat-message"><span class="chat-time">${timeStr}</span><span class="${msg.isBot ? 'chat-bot' : 'chat-user'}">${msg.user}:</span> ${msg.text}</div>`;
+      });
+      el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet... ✨</div>';
+      el.chatMessages.scrollTop = el.chatMessages.scrollHeight;
+      el.chatOnlineCount.innerText = `${Math.floor(2 + Math.random()*5)} online`;
+    }
+    
+    function sendChatMessage() {
+      const text = el.chatInput.value.trim();
+      if (!text) return;
+      const displayName = userAddress ? `${userAddress.substring(0, 4)}...` : "Anon";
+      addChatMessage(displayName, text, false);
+      el.chatInput.value = '';
+      setTimeout(() => {
+        if (Math.random() > 0.3) {
+          const botName = ["ShroomFan","TrippyDude","CosmicSoul","MyceliumMind"][Math.floor(Math.random()*4)];
+          addChatMessage(botName, botReplies[Math.floor(Math.random()*botReplies.length)], false);
+        }
+        if (Math.random() > 0.6) addChatMessage("🍄 ShroomBot", botReplies[Math.floor(Math.random()*botReplies.length)], true);
+      }, 600 + Math.random()*800);
+    }
+
+    function render() {
+      el.spores.innerText = `✨ Spores: ${Math.floor(spores)}`;
+      el.shrooms.innerText = `🍄 Shrooms: ${shrooms}`;
+      el.server.innerText = `🌍 Online: ${getOnline()}  |  👥 Total: ${getTotalPlayers()}`;
+      
+      const tapVal = getPerTapAmount();
+      el.perTapDisplay.innerHTML = `✨ per tap: ${tapVal.toFixed(1)} ${boosterActive ? '🔥 x4' : ''}`;
+
+      let boosterHtml = '';
+      if (boosterActive) {
+        const remaining = Math.max(0, Math.ceil((boosterEndTime - Date.now()) / 1000));
+        boosterHtml = `
+          <div style="text-align:center;">
+            <div class="booster-timer">⏳ ${remaining}s</div>
+            <div style="font-size:14px; margin:5px 0;">⚡ x4 ACTIVE ⚡</div>
+            <div class="progress-bar-container"><div class="progress-fill" style="width:100%; background:#ffaa00;"></div></div>
+          </div>
+        `;
+      } else {
+        const progressPercent = (boosterClicks / BOOSTER_REQUIRED) * 100;
+        boosterHtml = `
+          <div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div>
+          <div class="progress-bar-container"><div class="progress-fill" style="width:${progressPercent}%;"></div></div>
+          <div style="font-size:13px;">tap 50x for 15s x4 boost</div>
+        `;
+      }
+      el.boosterContent.innerHTML = boosterHtml;
+
+      const multVal = getMult();
+      el.profile.innerHTML = `
+        <div style="font-size:20px; margin-bottom:10px;">🌀 TRIP STATS</div>
+        <div>⚡ Spores/sec: ${(autoRate * multVal * (boosterActive ? 4 : 1)).toFixed(2)}</div>
+        <div>👆 Click: ${perClick} base</div>
+        <div>✨ Multiplier: x${multVal.toFixed(2)}</div>
+        <div>🔥 Per tap: ${tapVal.toFixed(1)}</div>
+        <div>🍄 Shrooms: ${shrooms}</div>
+        <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:10px; width:100%;">💎 Send 0.01 MATIC</button>
+      `;
+      
+      let upHtml = `<div style="font-size:18px; margin-bottom:8px;">⬆️ UPGRADES</div>`;
+      for (let key in upgrades) {
+        const u = upgrades[key];
+        let maxCount = 0, simSpores = spores, simCost = u.cost;
+        while (simSpores >= simCost) { simSpores -= simCost; maxCount++; simCost = Math.floor(simCost * u.mult); }
+        upHtml += `<div class="upgrade-card">
+          <div style="display:flex; justify-content:space-between;"><span style="font-size:18px;">${u.name}</span><span>owned: ${u.owned}</span></div>
+          <div>💰 ${u.cost} spores</div>
+          <div class="max-buy-info">Max: <strong>${maxCount}</strong></div>
+          <div class="button-group">
+            <button onclick="window.gameBuy('${key}')">Buy 1</button>
+            <button onclick="window.gameBuyMax('${key}')" ${maxCount===0?'disabled':''}>🔥 MAX</button>
+          </div></div>`;
+      }
+      el.upgradesDiv.innerHTML = upHtml;
+
+      const canAffordShroom = spores >= shroomCost;
+      el.prestigeDiv.innerHTML = `
+        <div class="prestige-block">
+          <div style="font-size:22px;">🌀 ASCEND TO SHROOM 🌀</div>
+          <div class="shroom-gain">🍄 Buy Shroom</div>
+          <div>(+10% multiplier)</div>
+          <div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;">
+            <div>💰 Cost: ${shroomCost.toLocaleString()} spores</div>
+            <div>✨ Spores: ${Math.floor(spores).toLocaleString()}</div>
+            <div>🍄 Shrooms: ${shrooms}</div>
+          </div>
+          <button onclick="window.buyShroom()" ${!canAffordShroom ? 'disabled' : ''} style="font-size:20px; padding:12px 30px; width:100%;">
+            🍄 BUY SHROOM
+          </button>
+          <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium Boost</button>
+        </div>
+      `;
+      
+      renderChat();
+      if (userAddress) updateBalance();
+    }
+
+    window.gameBuy = buy;
+    window.gameBuyMax = buyMax;
+    window.buyShroom = buyShroom;
+    window.sendMaticPayment = () => sendPayment('0.01');
+
+    // Event listeners
+    el.connectWalletBtn.addEventListener('click', connectWallet);
+    el.sendChatBtn.addEventListener('click', sendChatMessage);
+    el.chatInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendChatMessage(); });
+
+    document.querySelectorAll(".tab").forEach(tab => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+        tab.classList.add("active");
+        document.getElementById(tab.dataset.tab).classList.add("active");
+        render();
+      });
+    });
+
+    // Auto-detect wallet on load
+    async function autoConnect() {
+      if (window.ethereum || window.trustwallet || window.web3) {
+        try {
+          const provider = window.ethereum || window.trustwallet || window.web3?.currentProvider;
+          if (provider) {
+            const accounts = await provider.request({ method: 'eth_accounts' });
+            if (accounts && accounts.length > 0) {
+              console.log('Auto-connecting to existing session...');
+              await connectWallet();
+            }
+          }
+        } catch (e) {
+          console.log('No existing wallet session');
+        }
+      }
+      
+      // Show deep link option for mobile without wallet
+      if (isMobileDevice() && !window.ethereum && !window.trustwallet) {
+        el.deepLinkSection.style.display = 'block';
+      }
+    }
+
+    const loaded = loadGame();
+    if (!loaded) {
+      spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000;
+      upgrades.click.cost = 20; upgrades.click.owned = 0;
+      upgrades.auto.cost = 50; upgrades.auto.owned = 0;
+    }
+    
+    autoConnect();
+    render();
+    renderChat();
+    saveGame();
+    window.addEventListener('beforeunload', () => saveGame());
+  })();
+</script>
+</body>
+</html>
