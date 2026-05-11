@@ -33,7 +33,7 @@
       cursor: pointer; box-shadow: 0 0 15px #7B3FE4; transition: 0.3s;
       -webkit-tap-highlight-color: transparent; touch-action: manipulation;
     }
-    .connect-wallet-btn:hover {
+    .connect-wallet-btn:active {
       box-shadow: 0 0 25px #00ff88; transform: scale(1.05);
     }
     .network-badge {
@@ -110,7 +110,7 @@
       font-family: 'Rubik Glitch', cursive; font-size: 14px; cursor: pointer; box-shadow: 0 0 8px #1f6; transition: 0.15s;
       letter-spacing: 0.8px; backdrop-filter: blur(4px); -webkit-tap-highlight-color: transparent; touch-action: manipulation;
     }
-    button:hover { background: #1f3; color: black; border-color: white; box-shadow: 0 0 20px #8f8; }
+    button:active { background: #1f3; color: black; border-color: white; box-shadow: 0 0 20px #8f8; }
     button:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; background: #1a2a1a; }
     
     .upgrade-card { background: #0a120a; padding: 12px; margin: 10px 0; border-radius: 20px; border-left: 5px solid #0f0; box-shadow: 0 0 12px #1f3; }
@@ -140,32 +140,13 @@
     }
     #chatInput::placeholder { color: #6a8a6a; opacity: 0.7; }
     #sendChatBtn { padding: 10px 16px; margin: 0; }
-    
-    .deep-link-section {
-      text-align: center; margin: 10px 0; display: none;
+
+    #connectionLog {
+      background: rgba(0,0,0,0.8); border: 1px solid #7B3FE4; border-radius: 12px;
+      padding: 8px; margin: 8px 0; font-size: 10px; max-height: 80px; overflow-y: auto;
+      font-family: monospace; color: #88ff88; text-align: left; display: none;
     }
-    .deep-link-btn {
-      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-      border: 2px solid #ffa502; padding: 12px 24px;
-      font-size: 16px; animation: pulse 2s infinite;
-      width: 100%; margin-top: 8px;
-    }
-    @keyframes pulse {
-      0% { box-shadow: 0 0 10px #ff6b6b; }
-      50% { box-shadow: 0 0 30px #ffa502; }
-      100% { box-shadow: 0 0 10px #ff6b6b; }
-    }
-    
-    #walletStatus {
-      padding: 8px; margin: 8px 0; border-radius: 20px;
-      font-size: 12px; text-align: center;
-    }
-    .status-error { background: rgba(255,0,0,0.2); border: 1px solid #ff4444; color: #ff8888; }
-    .status-success { background: rgba(0,255,0,0.2); border: 1px solid #44ff44; color: #88ff88; }
-    .status-info { background: rgba(0,100,255,0.2); border: 1px solid #4488ff; color: #88aaff; }
   </style>
-  
-  <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js"></script>
 </head>
 <body>
 
@@ -177,21 +158,14 @@
 <div id="game">
   <div id="title">
     <div class="title-glow">🍄 TRIPPY SHROOMZ · POLYGON 🍄</div>
-    <div class="title-sub">/// WEB3 · ALL WALLETS SUPPORTED ///</div>
+    <div class="title-sub">/// WEB3 · WALLET FIXED ///</div>
   </div>
   
-  <div id="walletStatus" class="status-info">🔍 Detecting wallet...</div>
+  <div id="connectionLog"></div>
   
   <div class="wallet-info" id="walletInfo" style="display:none;">
     <span>👛 <span id="walletAddress">Not connected</span></span>
     <span>💰 <span id="maticBalance">0 MATIC</span></span>
-  </div>
-  
-  <div class="deep-link-section" id="deepLinkSection">
-    <button class="deep-link-btn" onclick="window.openDeepLink()">
-      📱 Open in Wallet Browser
-    </button>
-    <p style="font-size:11px; margin-top:5px;">Required for mobile wallet connection</p>
   </div>
   
   <div id="serverStats"></div>
@@ -243,47 +217,34 @@
 </div>
 
 <script>
+  // ============ SIMPLIFIED WALLET CONNECTION ============
   (function(){
     "use strict";
 
-    // ============ CONFIGURATION ============
     const POLYGON_CHAIN_ID = 137;
-    const POLYGON_RPC_URL = 'https://polygon-rpc.com';
     const PAYMENT_ADDRESS = '0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
     
-    // ============ GLOBAL STATE ============
     let provider = null;
     let signer = null;
     let userAddress = null;
     let maticBalance = '0';
-    let connectionAttempts = 0;
-    
-    // ============ GAME STATE ============
-    let spores = 0;
-    let shrooms = 0;
-    let perClick = 1;
-    let autoRate = 0;
-    let shroomCost = 100000;
 
+    // Game state
+    let spores = 0, shrooms = 0, perClick = 1, autoRate = 0, shroomCost = 100000;
     const upgrades = {
       click: { name: "🍄 Click Power", cost: 20, owned: 0, mult: 1.15, baseCost: 20 },
       auto: { name: "🤖 Auto Forager", cost: 50, owned: 0, mult: 1.15, baseCost: 50 }
     };
+    let boosterClicks = 0, boosterActive = false, boosterEndTime = 0;
+    const BOOSTER_DURATION = 15000, BOOSTER_REQUIRED = 50;
 
     const getMult = () => 1 + shrooms * 0.1;
-
-    let boosterClicks = 0;
-    let boosterActive = false;
-    let boosterEndTime = 0;
-    const BOOSTER_DURATION = 15000;
-    const BOOSTER_REQUIRED = 50;
-
     function getPerTapAmount() {
       let base = perClick * getMult();
       return boosterActive ? base * 4 : base;
     }
 
-    // ============ DOM ELEMENTS ============
+    // DOM
     const el = {
       spores: document.getElementById("spores"),
       shrooms: document.getElementById("shrooms"),
@@ -304,185 +265,151 @@
       maticBalance: document.getElementById("maticBalance"),
       walletInfo: document.getElementById("walletInfo"),
       networkBadge: document.getElementById("networkBadge"),
-      deepLinkSection: document.getElementById("deepLinkSection"),
-      walletStatus: document.getElementById("walletStatus")
+      connectionLog: document.getElementById("connectionLog")
     };
 
-    // ============ WALLET DETECTION ============
-    function detectWallets() {
-      const wallets = [];
-      
-      // Check for injected providers
-      if (window.ethereum) {
-        if (window.ethereum.isTrust || window.ethereum.isTrustWallet) {
-          wallets.push({ name: 'Trust Wallet', provider: window.ethereum, priority: 1 });
-        } else if (window.ethereum.isMetaMask) {
-          wallets.push({ name: 'MetaMask', provider: window.ethereum, priority: 2 });
-        } else if (window.ethereum.isCoinbaseWallet) {
-          wallets.push({ name: 'Coinbase Wallet', provider: window.ethereum, priority: 3 });
-        } else if (window.ethereum.isBraveWallet) {
-          wallets.push({ name: 'Brave Wallet', provider: window.ethereum, priority: 4 });
-        } else {
-          wallets.push({ name: 'Web3 Wallet', provider: window.ethereum, priority: 5 });
-        }
+    // Logging
+    function log(message) {
+      console.log(message);
+      if (el.connectionLog) {
+        el.connectionLog.style.display = 'block';
+        el.connectionLog.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+        el.connectionLog.scrollTop = el.connectionLog.scrollHeight;
       }
-      
-      // Check for Trust Wallet's specific provider
-      if (window.trustwallet) {
-        wallets.push({ name: 'Trust Wallet', provider: window.trustwallet, priority: 0 });
-      }
-      
-      // Check for legacy web3
-      if (window.web3?.currentProvider) {
-        wallets.push({ name: 'Legacy Web3', provider: window.web3.currentProvider, priority: 6 });
-      }
-      
-      return wallets.sort((a, b) => a.priority - b.priority);
     }
 
-    // ============ WALLET CONNECTION ============
+    // ============ WALLET CONNECTION - SIMPLIFIED ============
     async function connectWallet() {
-      connectionAttempts++;
-      el.walletStatus.className = 'status-info';
-      el.walletStatus.textContent = '🔍 Searching for wallet...';
+      log('🔍 Starting wallet connection...');
       
-      const wallets = detectWallets();
+      // Clear previous logs
+      if (el.connectionLog) el.connectionLog.innerHTML = '';
       
-      if (wallets.length > 0) {
-        el.walletStatus.textContent = `✅ Found ${wallets[0].name}! Connecting...`;
-        
-        for (const wallet of wallets) {
-          try {
-            await connectWithProvider(wallet.provider, wallet.name);
-            return; // Success
-          } catch (error) {
-            console.log(`Failed with ${wallet.name}:`, error.message);
-            continue; // Try next wallet
-          }
-        }
-        
-        // All wallets failed
-        el.walletStatus.className = 'status-error';
-        el.walletStatus.textContent = '❌ Connection failed. Try again.';
+      // STEP 1: Find the provider
+      let ethereum = null;
+      
+      if (window.ethereum) {
+        log('✅ Found window.ethereum');
+        ethereum = window.ethereum;
+      } else if (window.trustwallet) {
+        log('✅ Found window.trustwallet');
+        ethereum = window.trustwallet;
+      } else if (window.web3?.currentProvider) {
+        log('✅ Found window.web3.currentProvider');
+        ethereum = window.web3.currentProvider;
       } else {
-        // No wallet found
-        el.walletStatus.className = 'status-error';
-        el.walletStatus.textContent = '❌ No wallet detected!';
-        
-        if (isMobileDevice()) {
-          el.deepLinkSection.style.display = 'block';
-        } else {
-          el.walletStatus.textContent = '❌ Please install MetaMask or Trust Wallet extension';
-        }
+        log('❌ No wallet provider found!');
+        alert('❌ No wallet detected!\n\nPlease open this page inside Trust Wallet or MetaMask app browser.');
+        return;
       }
-    }
-
-    async function connectWithProvider(ethereumProvider, walletName) {
+      
+      // Log provider details
+      log(`Provider: ${ethereum.constructor?.name || 'Unknown'}`);
+      log(`isMetaMask: ${ethereum.isMetaMask}`);
+      log(`isTrust: ${ethereum.isTrust}`);
+      log(`isTrustWallet: ${ethereum.isTrustWallet}`);
+      
       try {
-        // Request accounts with proper mobile handling
+        // STEP 2: Request accounts
+        log('📝 Requesting accounts...');
+        
         let accounts;
-        try {
-          accounts = await ethereumProvider.request({ 
-            method: 'eth_requestAccounts' 
-          });
-        } catch (requestError) {
-          // Some wallets need enable() instead
-          if (ethereumProvider.enable) {
-            accounts = await ethereumProvider.enable();
-          } else {
-            throw requestError;
-          }
+        
+        // Try different methods
+        if (ethereum.request) {
+          log('Using ethereum.request method');
+          accounts = await ethereum.request({ method: 'eth_requestAccounts' });
+        } else if (ethereum.enable) {
+          log('Using legacy ethereum.enable method');
+          accounts = await ethereum.enable();
+        } else if (ethereum.send) {
+          log('Using ethereum.send method');
+          accounts = await ethereum.send('eth_requestAccounts');
+        } else {
+          throw new Error('No method to request accounts');
         }
+        
+        log(`Accounts received: ${accounts?.length || 0}`);
         
         if (!accounts || accounts.length === 0) {
-          throw new Error('No accounts authorized');
+          throw new Error('No accounts returned');
         }
         
         userAddress = accounts[0];
+        log(`✅ Connected: ${userAddress.substring(0, 10)}...`);
         
-        // Initialize ethers
-        provider = new ethers.providers.Web3Provider(ethereumProvider);
+        // STEP 3: Create ethers provider
+        provider = new ethers.providers.Web3Provider(ethereum);
         signer = provider.getSigner();
+        log('✅ Ethers provider created');
         
-        // Check network
+        // STEP 4: Check network
         const network = await provider.getNetwork();
+        log(`Network: ${network.name} (chainId: ${network.chainId})`);
         
         if (network.chainId !== POLYGON_CHAIN_ID) {
-          el.walletStatus.textContent = '⚠️ Switching to Polygon...';
-          await switchToPolygon(ethereumProvider);
+          log('⚠️ Not on Polygon, switching...');
+          try {
+            await ethereum.request({
+              method: 'wallet_switchEthereumChain',
+              params: [{ chainId: '0x89' }],
+            });
+            log('✅ Switched to Polygon');
+          } catch (switchError) {
+            log(`Switch error: ${switchError.message}`);
+            if (switchError.code === 4902) {
+              await ethereum.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                  chainId: '0x89',
+                  chainName: 'Polygon Mainnet',
+                  nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+                  rpcUrls: ['https://polygon-rpc.com'],
+                  blockExplorerUrls: ['https://polygonscan.com/']
+                }]
+              });
+              log('✅ Added Polygon network');
+            }
+          }
         }
         
-        // Success!
+        // STEP 5: Get balance
         await updateBalance();
-        updateWalletUI(walletName);
-        setupEventListeners(ethereumProvider);
         
-        el.walletStatus.className = 'status-success';
-        el.walletStatus.textContent = `✅ Connected with ${walletName}!`;
-        el.deepLinkSection.style.display = 'none';
+        // Update UI
+        el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+        el.walletInfo.style.display = 'flex';
+        el.connectWalletBtn.textContent = '✅ Connected';
+        el.connectWalletBtn.style.background = 'linear-gradient(135deg, #00aa44, #006622)';
+        el.networkBadge.textContent = '⛓️ Polygon';
         
-        console.log(`✅ Connected via ${walletName}:`, userAddress);
-        return true;
+        log('🎉 Wallet connected successfully!');
+        
+        // Listen for changes
+        ethereum.on('accountsChanged', (newAccounts) => {
+          log('🔄 Account changed');
+          if (newAccounts.length === 0) {
+            disconnectWallet();
+          } else {
+            userAddress = newAccounts[0];
+            el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
+            updateBalance();
+            render();
+          }
+        });
+        
+        ethereum.on('chainChanged', () => {
+          log('🔄 Chain changed, reloading...');
+          window.location.reload();
+        });
+        
+        render();
         
       } catch (error) {
-        console.error(`${walletName} connection error:`, error);
-        throw error;
+        log(`❌ Connection failed: ${error.message}`);
+        console.error('Full error:', error);
+        alert(`❌ Connection failed: ${error.message}\n\nPlease try again or check if wallet is unlocked.`);
       }
-    }
-
-    async function switchToPolygon(ethereumProvider) {
-      try {
-        await ethereumProvider.request({
-          method: 'wallet_switchEthereumChain',
-          params: [{ chainId: '0x89' }],
-        });
-      } catch (switchError) {
-        if (switchError.code === 4902) {
-          await ethereumProvider.request({
-            method: 'wallet_addEthereumChain',
-            params: [{
-              chainId: '0x89',
-              chainName: 'Polygon Mainnet',
-              nativeCurrency: {
-                name: 'MATIC',
-                symbol: 'MATIC',
-                decimals: 18
-              },
-              rpcUrls: [POLYGON_RPC_URL],
-              blockExplorerUrls: ['https://polygonscan.com/']
-            }]
-          });
-        }
-      }
-    }
-
-    function updateWalletUI(walletName) {
-      el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
-      el.walletInfo.style.display = 'flex';
-      el.connectWalletBtn.textContent = `✅ ${walletName}`;
-      el.networkBadge.textContent = '⛓️ Polygon';
-      render();
-    }
-
-    function setupEventListeners(ethereumProvider) {
-      ethereumProvider.on('accountsChanged', (newAccounts) => {
-        if (newAccounts.length === 0) {
-          disconnectWallet();
-        } else {
-          userAddress = newAccounts[0];
-          el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
-          updateBalance();
-          render();
-        }
-      });
-      
-      ethereumProvider.on('chainChanged', () => {
-        window.location.reload();
-      });
-      
-      ethereumProvider.on('disconnect', () => {
-        disconnectWallet();
-      });
     }
 
     function disconnectWallet() {
@@ -494,8 +421,9 @@
       el.maticBalance.textContent = '0 MATIC';
       el.walletInfo.style.display = 'none';
       el.connectWalletBtn.textContent = '🔌 Connect Wallet';
-      el.walletStatus.className = 'status-info';
-      el.walletStatus.textContent = '🔍 Wallet disconnected';
+      el.connectWalletBtn.style.background = 'linear-gradient(135deg, #7B3FE4, #4A90E2)';
+      el.networkBadge.textContent = '⛓️ Polygon';
+      log('🔌 Wallet disconnected');
       render();
     }
 
@@ -510,52 +438,19 @@
       }
     }
 
-    // ============ MOBILE DEEP LINK ============
-    function isMobileDevice() {
-      return /Android|iPhone|iPad|iPod|webOS/i.test(navigator.userAgent);
-    }
-
-    function openDeepLink() {
-      const currentUrl = window.location.href;
-      const encodedUrl = encodeURIComponent(currentUrl);
-      
-      if (isMobileDevice()) {
-        // Try multiple deep link formats
-        const deepLinks = [
-          `https://link.trustwallet.com/open_url?coin_id=966&url=${encodedUrl}`,
-          `https://metamask.app.link/dapp/${window.location.hostname}${window.location.pathname}`,
-          `trust://browser?url=${encodedUrl}`
-        ];
-        
-        // Try Trust Wallet first
-        window.location.href = deepLinks[0];
-        
-        // Fallback after 2 seconds
-        setTimeout(() => {
-          if (!document.hidden) {
-            alert('Opening wallet... If nothing happens:\n\n1. Copy this URL\n2. Open Trust Wallet\n3. Go to Browser tab\n4. Paste URL');
-          }
-        }, 2000);
-      }
-    }
-    window.openDeepLink = openDeepLink;
-
-    // ============ SEND PAYMENT ============
+    // ============ PAYMENT ============
     async function sendPayment(amountInMatic = '0.01') {
       if (!signer) {
         alert('❌ Please connect your wallet first!');
         return false;
       }
-      
       try {
         const tx = await signer.sendTransaction({
           to: PAYMENT_ADDRESS,
           value: ethers.utils.parseEther(amountInMatic)
         });
-        
         alert(`✅ Payment sent! TX: ${tx.hash.substring(0, 10)}...`);
         await tx.wait();
-        
         grantPremiumBenefits();
         return true;
       } catch (error) {
@@ -575,7 +470,7 @@
     }
 
     // ============ GAME FUNCTIONS ============
-    const SAVE_KEY = 'trippyShroomzSave_v7';
+    const SAVE_KEY = 'trippyShroomzSave_v8';
     
     function saveGame() {
       const saveData = {
@@ -583,14 +478,9 @@
         upgrades: {
           click: { cost: upgrades.click.cost, owned: upgrades.click.owned },
           auto: { cost: upgrades.auto.cost, owned: upgrades.auto.owned }
-        },
-        lastUpdated: Date.now()
+        }
       };
-      try {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(saveData));
-      } catch(e) {
-        console.warn('Save failed:', e);
-      }
+      try { localStorage.setItem(SAVE_KEY, JSON.stringify(saveData)); } catch(e) {}
       if (el.saveIndicator) {
         el.saveIndicator.style.opacity = '1';
         setTimeout(() => el.saveIndicator.style.opacity = '0.7', 200);
@@ -607,21 +497,16 @@
         perClick = data.perClick ?? 1;
         autoRate = data.autoRate ?? 0;
         shroomCost = data.shroomCost ?? 100000;
-        if (data.upgrades) {
-          if (data.upgrades.click) {
-            upgrades.click.cost = data.upgrades.click.cost ?? 20;
-            upgrades.click.owned = data.upgrades.click.owned ?? 0;
-          }
-          if (data.upgrades.auto) {
-            upgrades.auto.cost = data.upgrades.auto.cost ?? 50;
-            upgrades.auto.owned = data.upgrades.auto.owned ?? 0;
-          }
+        if (data.upgrades?.click) {
+          upgrades.click.cost = data.upgrades.click.cost ?? 20;
+          upgrades.click.owned = data.upgrades.click.owned ?? 0;
+        }
+        if (data.upgrades?.auto) {
+          upgrades.auto.cost = data.upgrades.auto.cost ?? 50;
+          upgrades.auto.owned = data.upgrades.auto.owned ?? 0;
         }
         return true;
-      } catch (e) { 
-        console.warn('Load failed:', e);
-        return false; 
-      }
+      } catch (e) { return false; }
     }
 
     function gainSpores() {
@@ -644,12 +529,9 @@
         }
       }
       gainSpores();
-      render();
     }
 
-    let holdInterval = null;
-    let isHolding = false;
-    
+    let holdInterval = null, isHolding = false;
     function startHold(e) {
       e.preventDefault();
       if (isHolding) return;
@@ -657,19 +539,12 @@
       gainSpores();
       holdInterval = setInterval(() => gainSpores(), 120);
     }
-    
     function stopHold() {
-      if (isHolding) {
-        clearInterval(holdInterval);
-        isHolding = false;
-      }
+      if (isHolding) { clearInterval(holdInterval); isHolding = false; }
     }
 
     el.char.addEventListener("mousedown", startHold);
-    el.char.addEventListener("touchstart", (e) => {
-      e.preventDefault();
-      startHold(e);
-    });
+    el.char.addEventListener("touchstart", (e) => { e.preventDefault(); startHold(e); });
     document.addEventListener("mouseup", stopHold);
     document.addEventListener("touchend", stopHold);
     el.char.addEventListener("click", handleMushroomClick);
@@ -786,33 +661,27 @@
       let boosterHtml = '';
       if (boosterActive) {
         const remaining = Math.max(0, Math.ceil((boosterEndTime - Date.now()) / 1000));
-        boosterHtml = `
-          <div style="text-align:center;">
-            <div class="booster-timer">⏳ ${remaining}s</div>
-            <div style="font-size:14px; margin:5px 0;">⚡ x4 ACTIVE ⚡</div>
-            <div class="progress-bar-container"><div class="progress-fill" style="width:100%; background:#ffaa00;"></div></div>
-          </div>
-        `;
+        boosterHtml = `<div style="text-align:center;">
+          <div class="booster-timer">⏳ ${remaining}s</div>
+          <div style="font-size:14px; margin:5px 0;">⚡ x4 ACTIVE ⚡</div>
+          <div class="progress-bar-container"><div class="progress-fill" style="width:100%; background:#ffaa00;"></div></div>
+        </div>`;
       } else {
         const progressPercent = (boosterClicks / BOOSTER_REQUIRED) * 100;
-        boosterHtml = `
-          <div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div>
+        boosterHtml = `<div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div>
           <div class="progress-bar-container"><div class="progress-fill" style="width:${progressPercent}%;"></div></div>
-          <div style="font-size:13px;">tap 50x for 15s x4 boost</div>
-        `;
+          <div style="font-size:13px;">tap 50x for 15s x4 boost</div>`;
       }
       el.boosterContent.innerHTML = boosterHtml;
 
       const multVal = getMult();
-      el.profile.innerHTML = `
-        <div style="font-size:20px; margin-bottom:10px;">🌀 TRIP STATS</div>
+      el.profile.innerHTML = `<div style="font-size:20px; margin-bottom:10px;">🌀 TRIP STATS</div>
         <div>⚡ Spores/sec: ${(autoRate * multVal * (boosterActive ? 4 : 1)).toFixed(2)}</div>
         <div>👆 Click: ${perClick} base</div>
         <div>✨ Multiplier: x${multVal.toFixed(2)}</div>
         <div>🔥 Per tap: ${tapVal.toFixed(1)}</div>
         <div>🍄 Shrooms: ${shrooms}</div>
-        <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:10px; width:100%;">💎 Send 0.01 MATIC</button>
-      `;
+        <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:10px; width:100%;">💎 Send 0.01 MATIC</button>`;
       
       let upHtml = `<div style="font-size:18px; margin-bottom:8px;">⬆️ UPGRADES</div>`;
       for (let key in upgrades) {
@@ -831,22 +700,18 @@
       el.upgradesDiv.innerHTML = upHtml;
 
       const canAffordShroom = spores >= shroomCost;
-      el.prestigeDiv.innerHTML = `
-        <div class="prestige-block">
-          <div style="font-size:22px;">🌀 ASCEND TO SHROOM 🌀</div>
-          <div class="shroom-gain">🍄 Buy Shroom</div>
-          <div>(+10% multiplier)</div>
-          <div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;">
-            <div>💰 Cost: ${shroomCost.toLocaleString()} spores</div>
-            <div>✨ Spores: ${Math.floor(spores).toLocaleString()}</div>
-            <div>🍄 Shrooms: ${shrooms}</div>
-          </div>
-          <button onclick="window.buyShroom()" ${!canAffordShroom ? 'disabled' : ''} style="font-size:20px; padding:12px 30px; width:100%;">
-            🍄 BUY SHROOM
-          </button>
-          <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium Boost</button>
+      el.prestigeDiv.innerHTML = `<div class="prestige-block">
+        <div style="font-size:22px;">🌀 ASCEND TO SHROOM 🌀</div>
+        <div class="shroom-gain">🍄 Buy Shroom</div>
+        <div>(+10% multiplier)</div>
+        <div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;">
+          <div>💰 Cost: ${shroomCost.toLocaleString()} spores</div>
+          <div>✨ Spores: ${Math.floor(spores).toLocaleString()}</div>
+          <div>🍄 Shrooms: ${shrooms}</div>
         </div>
-      `;
+        <button onclick="window.buyShroom()" ${!canAffordShroom ? 'disabled' : ''} style="font-size:20px; padding:12px 30px; width:100%;">🍄 BUY SHROOM</button>
+        <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium Boost</button>
+      </div>`;
       
       renderChat();
       if (userAddress) updateBalance();
@@ -857,7 +722,7 @@
     window.buyShroom = buyShroom;
     window.sendMaticPayment = () => sendPayment('0.01');
 
-    // ============ EVENT LISTENERS ============
+    // Event listeners
     el.connectWalletBtn.addEventListener('click', connectWallet);
     el.sendChatBtn.addEventListener('click', sendChatMessage);
     el.chatInput.addEventListener('keypress', (e) => { if(e.key==='Enter') sendChatMessage(); });
@@ -872,44 +737,37 @@
       });
     });
 
-    // ============ AUTO-CONNECT ON LOAD ============
+    // Auto-connect on load
     async function autoConnect() {
-      const wallets = detectWallets();
+      log('🚀 Page loaded, checking for wallet...');
       
-      if (wallets.length > 0) {
-        el.walletStatus.textContent = `🔍 Found ${wallets[0].name}! Auto-connecting...`;
-        
-        for (const wallet of wallets) {
-          try {
-            // Try to get existing accounts first
-            const accounts = await wallet.provider.request({ 
-              method: 'eth_accounts' 
-            });
-            
-            if (accounts && accounts.length > 0) {
-              console.log(`Found existing session with ${wallet.name}`);
-              await connectWithProvider(wallet.provider, wallet.name);
-              return;
-            }
-          } catch (e) {
-            console.log(`No existing session for ${wallet.name}`);
+      const ethereum = window.ethereum || window.trustwallet || window.web3?.currentProvider;
+      
+      if (ethereum) {
+        log('✅ Provider found, checking existing session...');
+        try {
+          let accounts;
+          if (ethereum.request) {
+            accounts = await ethereum.request({ method: 'eth_accounts' });
+          } else if (ethereum.send) {
+            accounts = await ethereum.send('eth_accounts');
           }
+          
+          if (accounts && accounts.length > 0) {
+            log('✅ Existing session found, auto-connecting...');
+            await connectWallet();
+          } else {
+            log('ℹ️ No existing session, waiting for user to connect');
+          }
+        } catch (e) {
+          log(`ℹ️ Could not auto-connect: ${e.message}`);
         }
-        
-        el.walletStatus.textContent = '✅ Wallet detected. Tap "Connect Wallet"';
       } else {
-        el.walletStatus.textContent = '🔍 No wallet detected';
-        
-        if (isMobileDevice()) {
-          el.deepLinkSection.style.display = 'block';
-          el.walletStatus.textContent = '📱 Open in wallet browser to connect';
-        } else {
-          el.walletStatus.textContent = '🦊 Install MetaMask or Trust Wallet';
-        }
+        log('❌ No wallet provider detected');
       }
     }
 
-    // ============ INITIALIZATION ============
+    // Init
     const loaded = loadGame();
     if (!loaded) {
       spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000;
@@ -922,12 +780,7 @@
     renderChat();
     saveGame();
     
-    // Auto-save and balance refresh
-    setInterval(() => {
-      saveGame();
-      if (userAddress) updateBalance();
-    }, 5000);
-    
+    setInterval(() => { saveGame(); if (userAddress) updateBalance(); }, 5000);
     window.addEventListener('beforeunload', () => saveGame());
   })();
 </script>
