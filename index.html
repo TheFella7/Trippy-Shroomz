@@ -286,16 +286,24 @@
             color: #cfc;
         }
         
+        /* Character container - centered */
+        .character-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            margin: 10px 0;
+        }
+        
         #character {
             width: 160px;
             height: 160px;
             cursor: pointer;
-            display: inline-block;
+            display: block;
             filter: drop-shadow(0 0 20px #39ff14);
             transition: filter 0.3s;
             -webkit-tap-highlight-color: transparent;
             outline: none;
-            margin: 10px auto;
             background: transparent;
         }
         
@@ -571,10 +579,13 @@
 
         <div id="serverStats"></div>
 
-        <div id="character">
-            <img src="https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png" 
-                 alt="Mushroom"
-                 draggable="false">
+        <!-- Centered character container -->
+        <div class="character-container">
+            <div id="character">
+                <img src="https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png" 
+                     alt="Mushroom"
+                     draggable="false">
+            </div>
         </div>
 
         <div class="per-tap" id="perTapDisplay">✨ per tap: 1</div>
@@ -678,7 +689,7 @@
             const BOOSTER_DURATION = 15000, BOOSTER_REQUIRED = 50;
             let lastTapTimeForDecay = 0;
             let fallingSporesInterval = null;
-            const MAX_FALLING_SPORES = 8;
+            const MAX_FALLING_SPORES = 6;
 
             const getMult = () => 1 + shrooms * 0.1;
 
@@ -725,7 +736,6 @@
                 }
             }
 
-            // ============ USERNAME SYSTEM ============
             function loadUsername() {
                 try {
                     const saved = localStorage.getItem('trippyShroomz_username');
@@ -796,7 +806,6 @@
                 if (newName && newName.trim().length > 0) setPlayerName(newName);
             };
 
-            // ============ WALLET ============
             async function connectWallet() {
                 let ethereum = window.ethereum || window.trustwallet;
                 if (!ethereum) {
@@ -871,7 +880,6 @@
                 } catch (e) { alert('Transaction failed'); }
             };
 
-            // ============ GAME LOGIC ============
             const SAVE_KEY = 'trippyShroomzSave_v10';
 
             function saveGame() {
@@ -963,7 +971,7 @@
                 spawnFallingSpore();
                 fallingSporesInterval = setInterval(() => {
                     if (boosterActive) spawnFallingSpore();
-                }, 1500);
+                }, 1800);
             }
 
             function stopFallingSpores() {
@@ -1020,7 +1028,6 @@
             });
             el.char.addEventListener("contextmenu", (e) => e.preventDefault());
 
-            // Boost decay check
             setInterval(() => {
                 if (boosterActive) {
                     const now = Date.now();
@@ -1180,7 +1187,6 @@
                 updatePlayerNameDisplay();
             }
 
-            // Event listeners
             el.connectWalletBtn.addEventListener('click', connectWallet);
             el.sendChatBtn.addEventListener('click', sendChatMessage);
             el.chatInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChatMessage(); });
@@ -1199,7 +1205,6 @@
                 });
             });
 
-            // Init
             if (!loadGame()) {
                 spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000;
                 upgrades.click.cost = 20; upgrades.click.owned = 0;
@@ -1210,7 +1215,6 @@
             renderChat();
             saveGame();
 
-            // Auto-connect if wallet available
             (async () => {
                 const ethereum = window.ethereum;
                 if (ethereum) {
