@@ -187,7 +187,7 @@
       <div id="chatMessages"></div>
       <div class="chat-input-area"><input type="text" id="chatInput" placeholder="say something trippy..." maxlength="60" /><button id="sendChatBtn">Send</button></div>
     </div>
-    <div class="save-indicator" id="saveIndicator">💾 auto‑saves · Supabase sync</div>
+    <div class="save-indicator" id="saveIndicator">💾 auto‑saves · Supabase live</div>
   </div>
 
   <script>
@@ -221,8 +221,8 @@
         try {
           const { data, error } = await supabase.from('online_players').select('player_id', { count: 'exact', head: true });
           if (error) { console.error('Supabase connection test failed:', error.message); updateSupabaseStatus(false); }
-          else { console.log('✅ Supabase connected'); updateSupabaseStatus(true); fetchStats().then(() => updateOnlinePlayers()); fetchChatMessages(); fetchServerLeaderboard(); if(playerId) fetchPlayerShroomsFromSupabase(); }
-        } catch(e) { console.error('Supabase error:', e); updateSupabaseStatus(false); }
+          else { console.log('✅ Supabase connection test passed'); updateSupabaseStatus(true); fetchStats().then(() => updateOnlinePlayers()); fetchChatMessages(); fetchServerLeaderboard(); }
+        } catch(e) { console.error('Supabase connection test error:', e); updateSupabaseStatus(false); }
       }
       initSupabase();
 
@@ -231,7 +231,7 @@
       const PAYMENT_ADDRESS='0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
       const MUSHROOM_IMAGE_URL='https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png';
       const POL_PRICE_GBP=0.07, POL_PRICE_USD=0.38;
-      const WALLET_STORAGE_KEY='trippyShroomz_wallet_sync';
+      const WALLET_STORAGE_KEY='trippyShroomz_wallet_multi';
 
       let provider=null,signer=null,userAddress=null,polBalance='0',playerName='',hasSetName=false,isPolygonNetwork=false;
       let spores=0,shrooms=0,perClick=1,autoRate=0,shroomCost=100000,purchasedMultiplier=0;
@@ -247,69 +247,12 @@
       const PLAYER_ID_KEY='trippyShroomz_playerId';
       let playerId=null,leaderboardData=[];
       let chatMessages=[];
-      let lastSupabaseShroomSync = 0;
 
       function saveWalletState() { if(userAddress) try { localStorage.setItem(WALLET_STORAGE_KEY,JSON.stringify({address:userAddress.toLowerCase(),name:playerName,timestamp:Date.now()})); } catch(e) {} }
       function clearWalletState() { try { localStorage.removeItem(WALLET_STORAGE_KEY); } catch(e) {} }
       function getStoredWalletState() { try { const r=localStorage.getItem(WALLET_STORAGE_KEY); if(!r) return null; const d=JSON.parse(r); if(Date.now()-d.timestamp>30*24*60*60*1000){clearWalletState();return null;} return d; } catch(e) { return null; } }
 
-      function updateSupabaseStatus(c){supabaseConnected=c;const el=document.getElementById('supabaseStatus');if(!el)return;if(c){el.textContent='🟢 Supabase Live · Shrooms Sync Active';el.className='supabase-status supabase-connected';}else if(supabase){el.textContent='🟡 Supabase Connecting...';el.className='supabase-status supabase-connecting';}else{el.textContent='🔴 Supabase Offline';el.className='supabase-status supabase-offline';}}
-
-      // 🔥 FETCH SHROOMS FROM SUPABASE (the fix!)
-      async function fetchPlayerShroomsFromSupabase() {
-        if (!supabase || !playerId) return;
-        try {
-          const { data, error } = await supabase
-            .from('leaderboard')
-            .select('shrooms, purchased_multiplier')
-            .eq('player_id', playerId)
-            .single();
-          
-          if (!error && data) {
-            // Only update if Supabase has MORE shrooms than local (don't overwrite local progress)
-            if (data.shrooms > shrooms) {
-              console.log('🔄 Syncing shrooms from Supabase:', shrooms, '->', data.shrooms);
-              shrooms = data.shrooms;
-              lastSupabaseShroomSync = Date.now();
-              saveGame();
-              render();
-            }
-            // Always sync purchased_multiplier from Supabase (shop purchases)
-            if (data.purchased_multiplier > purchasedMultiplier) {
-              console.log('🔄 Syncing multiplier from Supabase:', purchasedMultiplier, '->', data.purchased_multiplier);
-              purchasedMultiplier = data.purchased_multiplier;
-              saveGame();
-              render();
-            }
-          }
-        } catch(e) {
-          // Player might not be in leaderboard yet - that's fine
-        }
-
-        // Also check online_players table
-        try {
-          const { data: opData, error: opError } = await supabase
-            .from('online_players')
-            .select('shrooms, purchased_multiplier')
-            .eq('player_id', playerId)
-            .single();
-          
-          if (!opError && opData) {
-            if (opData.shrooms > shrooms) {
-              console.log('🔄 Syncing shrooms from online_players:', shrooms, '->', opData.shrooms);
-              shrooms = opData.shrooms;
-              lastSupabaseShroomSync = Date.now();
-              saveGame();
-              render();
-            }
-            if (opData.purchased_multiplier > purchasedMultiplier) {
-              purchasedMultiplier = opData.purchased_multiplier;
-              saveGame();
-              render();
-            }
-          }
-        } catch(e) {}
-      }
+      function updateSupabaseStatus(c){supabaseConnected=c;const el=document.getElementById('supabaseStatus');if(!el)return;if(c){el.textContent='🟢 Supabase Live · Tracking Active';el.className='supabase-status supabase-connected';}else if(supabase){el.textContent='🟡 Supabase Connecting...';el.className='supabase-status supabase-connecting';}else{el.textContent='🔴 Supabase Offline';el.className='supabase-status supabase-offline';}}
 
       async function upsertPlayerPresence(){if(!supabase||!playerId)return;try{const{error}=await supabase.from('online_players').upsert({player_id:playerId,wallet_address:userAddress||null,player_name:playerName||null,level:playerLevel,spores:Math.floor(spores),shrooms,purchased_multiplier:purchasedMultiplier,last_seen:new Date().toISOString()},{onConflict:'player_id'});if(!error)updateSupabaseStatus(true);}catch(e){}}
       async function fetchStats(){if(!supabase)return;try{const fiveMinAgo=new Date(Date.now()-5*60*1000).toISOString();const{data:online,error:oe}=await supabase.from('online_players').select('player_id',{count:'exact'}).gte('last_seen',fiveMinAgo);if(!oe&&online){onlinePlayers=online.length;}const{count,error:ce}=await supabase.from('online_players').select('*',{count:'exact',head:true});if(!ce&&count!==null){totalPlayers=count;}updateSupabaseStatus(true);}catch(e){updateSupabaseStatus(false);}}
@@ -324,6 +267,7 @@
       const getPerTapAmount=()=>(perClick*getMult())*(boosterActive?5:1);
       const getCryptoConversion=(gbp)=>({pol:(gbp/POL_PRICE_GBP).toFixed(2),polPriceGBP:POL_PRICE_GBP.toFixed(2),polPriceUSD:POL_PRICE_USD.toFixed(2)});
 
+      // 🔥 Calculate how many shrooms can be bought with current spores
       function getMaxShroomPurchases() {
         let count = 0;
         let currentPrice = shroomCost;
@@ -336,6 +280,7 @@
         return { count, nextPrice: currentPrice, totalCost: spores - remainingSpores };
       }
 
+      // 🔥 Calculate what the next shroom price will be after buying N shrooms
       function getFutureShroomPrice(purchases) {
         let price = shroomCost;
         for (let i = 0; i < purchases; i++) {
@@ -352,7 +297,7 @@
       function addChatMessage(user,text,type){chatMessages.push({user,text,type:type||'message',timestamp:Date.now()});if(chatMessages.length>100)chatMessages.shift();renderChat();}
       function renderChat(){const mc=el('chatMessages');if(!mc)return;let h='';const msgs=chatMessages.slice(-20).reverse();msgs.forEach(m=>{const ts=new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});if(m.type==='join')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>🍄 <span class="chat-user">${m.user}</span> joined!</div>`;else if(m.type==='return')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>✨ <span class="chat-user">${m.user}</span> returned!</div>`;else if(m.type==='levelup')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>⭐ <span class="chat-user">${m.user}</span> ${m.text}</div>`;else h+=`<div class="chat-message"><span class="chat-time">${ts}</span><span class="chat-user">${m.user}:</span> ${m.text}</div>`;});mc.innerHTML=h||'<div style="color:#6a6;">✨ chat quiet...</div>';}
 
-      function initPlayerTracking(){playerId=localStorage.getItem(PLAYER_ID_KEY)||('player_'+Date.now()+'_'+Math.random().toString(36).substr(2,9));localStorage.setItem(PLAYER_ID_KEY,playerId);updateOnlinePlayers();setInterval(updateOnlinePlayers,15000);setInterval(()=>{upsertLeaderboardEntry();fetchServerLeaderboard();},30000);setInterval(()=>{if(supabase&&playerId)fetchPlayerShroomsFromSupabase();},5000);}
+      function initPlayerTracking(){playerId=localStorage.getItem(PLAYER_ID_KEY)||('player_'+Date.now()+'_'+Math.random().toString(36).substr(2,9));localStorage.setItem(PLAYER_ID_KEY,playerId);updateOnlinePlayers();setInterval(updateOnlinePlayers,15000);setInterval(()=>{upsertLeaderboardEntry();fetchServerLeaderboard();},30000);}
 
       async function updateOnlinePlayers(){if(supabase){await fetchStats();if(playerId)await upsertPlayerPresence();}else{onlinePlayers=Math.max(1,leaderboardData.length||1);totalPlayers=Math.max(onlinePlayers,totalPlayers);}el('serverStats').innerText=`🌍 Online: ${onlinePlayers} | 👥 Total: ${totalPlayers.toLocaleString()}`;if(el('chatOnlineCount'))el('chatOnlineCount').innerText=`${onlinePlayers} online`;}
 
@@ -362,9 +307,9 @@
 
       function renderShop(){const p=el('shop');if(!p||!p.classList.contains('active'))return;let h=`<div style="font-size:20px;text-align:center;margin-bottom:15px;">🛸 COSMIC SHOP 🛸</div><div class="network-notice">⛓️ Polygon Mainnet (POL) · 1 POL = £${POL_PRICE_GBP.toFixed(2)} GBP</div>`;shopItems.forEach((item,i)=>{const conv=getCryptoConversion(item.priceGBP);const btnId=`buyBtn_${item.id}`;let tc='',bc='';if(item.tier==='premium'){tc=' premium';bc=' premium-btn';}else if(item.tier==='ultimate'){tc=' ultimate';bc=' ultimate-btn';}let badge='';if(i===1)badge='<span class="best-value">BEST VALUE</span>';else if(i===2)badge='<span class="best-value">MAX POWER</span>';h+=`<div class="shop-item${tc}"><div class="shop-item-title">💎 ${item.name}${badge}</div><div class="shop-item-description">Permanent ${item.multiplier}x spore boost!</div><div class="price-display">💷 £${item.priceGBP.toFixed(2)} GBP</div><div class="crypto-conversion"><div>🔮 POL Conversion:</div><div style="margin-top:3px;"><span>🟣 <span class="crypto-amount">${conv.pol} POL</span></span></div><div style="font-size:9px;color:#6a6;margin-top:3px;">1 POL = £${conv.polPriceGBP} (≈ $${conv.polPriceUSD})</div></div><button class="purchase-btn${bc}" id="${btnId}" onclick="window.purchaseMultiplier(${item.multiplier},${item.priceGBP},'${btnId}')" ${!isPolygonNetwork||!signer?'disabled':''}>${isPolygonNetwork&&signer?`💎 Buy x${item.multiplier} · ${conv.pol} POL`:'🔌 Connect Polygon Wallet'}</button></div>`;});h+=`<div style="text-align:center;margin-top:10px;font-size:14px;color:#ffb3ff;">Current Multiplier: x${getMult().toFixed(1)}${purchasedMultiplier>0?` <span class="owned-badge">+${purchasedMultiplier}x shop</span>`:''}</div>`;p.innerHTML=h;}
 
-      async function silentReconnect(){const et=window.ethereum;if(!et)return false;try{const accounts=await et.request({method:'eth_accounts'});if(!accounts||accounts.length===0)return false;userAddress=accounts[0];provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const net=await provider.getNetwork();isPolygonNetwork=(net.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();await updateBalance();el('walletAddress').textContent=`${userAddress.substring(0,6)}...${userAddress.substring(38)}`;el('walletInfo').style.display='flex';el('connectWalletBtn').textContent=isPolygonNetwork?'✅ Connected':'⚠️ Switch';saveWalletState();if(!hasSetName)loadUsername();render();renderShop();setupWalletListeners(et);if(supabase&&playerId)fetchPlayerShroomsFromSupabase();return true;}catch(e){return false;}}
+      async function silentReconnect(){const et=window.ethereum;if(!et)return false;try{const accounts=await et.request({method:'eth_accounts'});if(!accounts||accounts.length===0)return false;userAddress=accounts[0];provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const net=await provider.getNetwork();isPolygonNetwork=(net.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();await updateBalance();el('walletAddress').textContent=`${userAddress.substring(0,6)}...${userAddress.substring(38)}`;el('walletInfo').style.display='flex';el('connectWalletBtn').textContent=isPolygonNetwork?'✅ Connected':'⚠️ Switch';saveWalletState();if(!hasSetName)loadUsername();render();renderShop();setupWalletListeners(et);return true;}catch(e){return false;}}
 
-      async function fullConnect(){const et=window.ethereum;if(!et){alert('Install a Web3 wallet!');return;}try{const accounts=await et.request({method:'eth_requestAccounts'});if(!accounts||accounts.length===0)return;userAddress=accounts[0];provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const net=await provider.getNetwork();isPolygonNetwork=(net.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();if(!isPolygonNetwork){const sw=confirm('Switch to Polygon Mainnet?');if(sw){await switchToPolygonNetwork();provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const nn=await provider.getNetwork();isPolygonNetwork=(nn.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();}}await updateBalance();el('walletAddress').textContent=`${userAddress.substring(0,6)}...${userAddress.substring(38)}`;el('walletInfo').style.display='flex';el('connectWalletBtn').textContent=isPolygonNetwork?'✅ Connected':'⚠️ Switch';saveWalletState();if(!loadUsername()){setTimeout(()=>{el('usernameModal').style.display='flex';},500);}else{addChatMessage(playerName,null,'return');}render();renderShop();setupWalletListeners(et);if(supabase&&playerId)fetchPlayerShroomsFromSupabase();}catch(e){console.error(e);alert('Connection failed.');}}
+      async function fullConnect(){const et=window.ethereum;if(!et){alert('Install a Web3 wallet!');return;}try{const accounts=await et.request({method:'eth_requestAccounts'});if(!accounts||accounts.length===0)return;userAddress=accounts[0];provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const net=await provider.getNetwork();isPolygonNetwork=(net.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();if(!isPolygonNetwork){const sw=confirm('Switch to Polygon Mainnet?');if(sw){await switchToPolygonNetwork();provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const nn=await provider.getNetwork();isPolygonNetwork=(nn.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();}}await updateBalance();el('walletAddress').textContent=`${userAddress.substring(0,6)}...${userAddress.substring(38)}`;el('walletInfo').style.display='flex';el('connectWalletBtn').textContent=isPolygonNetwork?'✅ Connected':'⚠️ Switch';saveWalletState();if(!loadUsername()){setTimeout(()=>{el('usernameModal').style.display='flex';},500);}else{addChatMessage(playerName,null,'return');}render();renderShop();setupWalletListeners(et);}catch(e){console.error(e);alert('Connection failed.');}}
 
       function updateNetworkBadge(){const nb=el('networkBadge');if(!nb)return;nb.textContent=isPolygonNetwork?'⛓️ Polygon ✓':'⚠️ Wrong Network';nb.style.borderColor=isPolygonNetwork?'#00ff88':'#ff4444';}
 
@@ -381,7 +326,7 @@
 
       async function updateBalance(){if(provider&&userAddress)try{const b=await provider.getBalance(userAddress);polBalance=ethers.utils.formatEther(b);el('maticBalance').textContent=`${parseFloat(polBalance).toFixed(2)} POL`;}catch(e){}}
 
-      const SAVE_KEY='trippyShroomzSave_v30_sync';
+      const SAVE_KEY='trippyShroomzSave_v29_multi';
       function saveGame(){try{const data={spores,shrooms,perClick,autoRate,shroomCost,upgrades:{click:{cost:upgrades.click.cost,owned:upgrades.click.owned},auto:{cost:upgrades.auto.cost,owned:upgrades.auto.owned}},playerLevel,currentExp,purchasedMultiplier};localStorage.setItem(SAVE_KEY,JSON.stringify(data));}catch(e){}}
       function loadGame(){try{const s=localStorage.getItem(SAVE_KEY);if(!s)return false;const d=JSON.parse(s);spores=d.spores??0;shrooms=d.shrooms??0;perClick=d.perClick??1;autoRate=d.autoRate??0;shroomCost=d.shroomCost??100000;if(d.upgrades?.click){upgrades.click.cost=d.upgrades.click.cost;upgrades.click.owned=d.upgrades.click.owned;}if(d.upgrades?.auto){upgrades.auto.cost=d.upgrades.auto.cost;upgrades.auto.owned=d.upgrades.auto.owned;}playerLevel=d.playerLevel||1;currentExp=d.currentExp||0;purchasedMultiplier=d.purchasedMultiplier||0;return true;}catch(e){return false;}}
 
@@ -402,25 +347,29 @@
       window.gameBuy=function(k){const u=upgrades[k];if(!u||spores<u.cost)return;spores-=u.cost;u.owned++;if(k==='click')perClick++;if(k==='auto')autoRate++;u.cost=Math.floor(u.cost*u.mult);saveGame();render();};
       window.gameBuyMax=function(k){const u=upgrades[k];if(!u)return;let c=0,s=spores,co=u.cost;while(s>=co){s-=co;c++;co=Math.floor(co*u.mult);}if(c===0)return;spores=s;u.owned+=c;if(k==='click')perClick+=c;if(k==='auto')autoRate+=c;u.cost=co;saveGame();render();};
 
-      window.buyShroom=function(){if(spores<shroomCost)return;spores-=shroomCost;shrooms++;shroomCost=Math.floor(shroomCost*1.15);spores=0;perClick=1;autoRate=0;upgrades.click.cost=20;upgrades.click.owned=0;upgrades.auto.cost=50;upgrades.auto.owned=0;boosterClicks=0;boosterActive=false;boosterEndTime=0;stopFallingSpores();playerLevel=1;currentExp=0;saveGame();render();addChatMessage(playerName||'Player',`ASCENDED! Now at ${shrooms} Shrooms 🍄`,'levelup');if(supabase&&playerId)upsertLeaderboardEntry();};
+      // 🔥 BUY SHROOM (single) - original function
+      window.buyShroom=function(){if(spores<shroomCost)return;spores-=shroomCost;shrooms++;shroomCost=Math.floor(shroomCost*1.15);spores=0;perClick=1;autoRate=0;upgrades.click.cost=20;upgrades.click.owned=0;upgrades.auto.cost=50;upgrades.auto.owned=0;boosterClicks=0;boosterActive=false;boosterEndTime=0;stopFallingSpores();playerLevel=1;currentExp=0;saveGame();render();addChatMessage(playerName||'Player',`ASCENDED! Now at ${shrooms} Shrooms 🍄`,'levelup');};
 
+      // 🔥 BUY MAX SHROOMS - new function
       window.buyMaxShrooms=function(){
         const { count, nextPrice } = getMaxShroomPurchases();
         if (count === 0) return;
+        
         let remainingSpores = spores;
         for (let i = 0; i < count; i++) {
           remainingSpores -= shroomCost;
           shrooms++;
           shroomCost = Math.floor(shroomCost * 1.15);
         }
+        
         spores = 0; perClick = 1; autoRate = 0;
         upgrades.click.cost = 20; upgrades.click.owned = 0;
         upgrades.auto.cost = 50; upgrades.auto.owned = 0;
         boosterClicks = 0; boosterActive = false; boosterEndTime = 0;
         stopFallingSpores(); playerLevel = 1; currentExp = 0;
+        
         saveGame(); render();
         addChatMessage(playerName||'Player',`ASCENDED x${count}! Now at ${shrooms} Shrooms 🍄 Multi: x${getMult().toFixed(1)}`,'levelup');
-        if(supabase&&playerId)upsertLeaderboardEntry();
       };
 
       function render(){
@@ -431,10 +380,12 @@
         el('profile').innerHTML=`<div style="font-size:20px;">🌀 TRIP STATS</div>${playerName?`<div style="font-size:18px;color:#ffb3ff;">🧑‍🚀 ${playerName}</div>`:''}<div>⭐ Level ${playerLevel}</div><div>⚡ Spores/sec: ${(autoRate*getMult()*(boosterActive?5:1)).toFixed(2)}</div><div>👆 Click: ${perClick} | ✨ Multi: x${getMult().toFixed(1)}</div>${purchasedMultiplier>0?`<div style="color:#ffdd00;font-size:12px;">💎 Shop Bonus: +${purchasedMultiplier}x</div>`:''}${playerName?`<div class="change-name-link" onclick="window.changePlayerName()">✏️ Change name</div>`:''}`;
         let uh=`<div style="font-size:18px;">⬆️ UPGRADES</div>`;for(let k in upgrades){const u=upgrades[k];let mx=0,s=spores,c=u.cost;while(s>=c){s-=c;mx++;c=Math.floor(c*u.mult);}uh+=`<div class="upgrade-card"><div><span style="font-size:18px;">${u.name}</span> | owned: ${u.owned}</div><div>💰 ${u.cost} spores</div><div class="max-buy-info">Max: ${mx}</div><div class="button-group"><button onclick="window.gameBuy('${k}')">Buy 1</button><button onclick="window.gameBuyMax('${k}')" ${mx===0?'disabled':''}>🔥 MAX</button></div></div>`;}el('upgrades').innerHTML=uh;
 
+        // 🔥 PRESTIGE TAB - Updated with max shroom info
         const canBuy = spores >= shroomCost;
         const maxInfo = getMaxShroomPurchases();
         const nextPriceAfterMax = getFutureShroomPrice(maxInfo.count);
-        el('prestige').innerHTML=`<div class="prestige-block"><div style="font-size:22px;">🌀 ASCEND 🌀</div><div class="shroom-gain">🍄 Buy Shroom</div><div>(+x1 multiplier per shroom, resets ALL progress)</div><div style="background:#112211;border-radius:30px;padding:12px;margin:10px 0;"><div>💰 Current Price: ${shroomCost.toLocaleString()} spores</div><div>✨ Available: ${Math.floor(spores).toLocaleString()} spores</div><div>🍄 Owned: ${shrooms} shrooms</div><div>📈 Multi: x${getMult().toFixed(1)}</div></div><div class="max-ascend-info">🔥 You can buy <strong>${maxInfo.count}</strong> shroom${maxInfo.count!==1?'s':''} with your spores!<br>💰 Next shroom price after max buy: <strong>${nextPriceAfterMax.toLocaleString()}</strong> spores<br>📈 Multi after max buy: x${(getMult()+maxInfo.count).toFixed(1)}</div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"><button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:16px;flex:1;min-width:120px;">🍄 Buy 1 Shroom</button><button onclick="window.buyMaxShrooms()" ${maxInfo.count===0?'disabled':''} style="font-size:16px;flex:1;min-width:120px;background:linear-gradient(135deg,#ff6600,#ff3300);border-color:#ffaa00;">🔥 Buy ${maxInfo.count} Max</button></div><div style="font-size:11px;color:#ff9999;margin-top:8px;">⚠️ Resets spores, upgrades, boost & LEVEL</div><div style="font-size:11px;color:#89CFF0;">✅ Keeps name, shop items & multiplier</div><div style="font-size:10px;color:#afa;margin-top:4px;">🔄 Shrooms sync from Supabase every 5s</div></div>`;
+        
+        el('prestige').innerHTML=`<div class="prestige-block"><div style="font-size:22px;">🌀 ASCEND 🌀</div><div class="shroom-gain">🍄 Buy Shroom</div><div>(+x1 multiplier per shroom, resets ALL progress)</div><div style="background:#112211;border-radius:30px;padding:12px;margin:10px 0;"><div>💰 Current Price: ${shroomCost.toLocaleString()} spores</div><div>✨ Available: ${Math.floor(spores).toLocaleString()} spores</div><div>🍄 Owned: ${shrooms} shrooms</div><div>📈 Multi: x${getMult().toFixed(1)}</div></div><div class="max-ascend-info">🔥 You can buy <strong>${maxInfo.count}</strong> shroom${maxInfo.count!==1?'s':''} with your spores!<br>💰 Next shroom price after max buy: <strong>${nextPriceAfterMax.toLocaleString()}</strong> spores<br>📈 Multi after max buy: x${(getMult()+maxInfo.count).toFixed(1)}</div><div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;"><button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:16px;flex:1;min-width:120px;">🍄 Buy 1 Shroom</button><button onclick="window.buyMaxShrooms()" ${maxInfo.count===0?'disabled':''} style="font-size:16px;flex:1;min-width:120px;background:linear-gradient(135deg,#ff6600,#ff3300);border-color:#ffaa00;">🔥 Buy ${maxInfo.count} Max</button></div><div style="font-size:11px;color:#ff9999;margin-top:8px;">⚠️ Resets spores, upgrades, boost & LEVEL</div><div style="font-size:11px;color:#89CFF0;">✅ Keeps name, shop items & multiplier</div></div>`;
         updateLevelDisplay();renderChat();renderLeaderboard();renderShop();
         el('playerNameDisplay').style.display=playerName?'inline-block':'none';if(playerName)el('playerNameText').textContent=playerName;
       }
@@ -446,7 +397,7 @@
       el('chatInput').addEventListener('keypress',(e)=>{if(e.key==='Enter')sendChatMessage();});
       el('saveUsernameBtn').addEventListener('click',()=>setPlayerName(el('usernameInput').value));
       el('usernameInput').addEventListener('keypress',(e)=>{if(e.key==='Enter')el('saveUsernameBtn').click();});
-      document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');const pid=t.dataset.tab;document.getElementById(pid).classList.add('active');if(pid==='leaderboard'){if(supabase)fetchServerLeaderboard();renderLeaderboard();if(supabase&&playerId)fetchPlayerShroomsFromSupabase();}else if(pid==='shop')renderShop();});});
+      document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');const pid=t.dataset.tab;document.getElementById(pid).classList.add('active');if(pid==='leaderboard'){if(supabase)fetchServerLeaderboard();renderLeaderboard();}else if(pid==='shop')renderShop();});});
 
       if(!loadGame()){spores=0;shrooms=0;perClick=1;autoRate=0;shroomCost=100000;upgrades.click.cost=20;upgrades.click.owned=0;upgrades.auto.cost=50;upgrades.auto.owned=0;playerLevel=1;currentExp=0;purchasedMultiplier=0;}
       initPlayerTracking();updateLevelDisplay();render();renderChat();saveGame();
@@ -459,7 +410,7 @@
       window.addEventListener('pageshow',(e)=>{if(e.persisted){setTimeout(()=>attemptAutoReconnect(5,500),300);}});
 
       setInterval(saveGame,5000);
-      setInterval(()=>{if(supabase&&playerId){upsertPlayerPresence();upsertLeaderboardEntry();fetchChatMessages();fetchPlayerShroomsFromSupabase();}},15000);
+      setInterval(()=>{if(supabase&&playerId){upsertPlayerPresence();upsertLeaderboardEntry();fetchChatMessages();}},15000);
       window.addEventListener('beforeunload',()=>{saveGame();saveWalletState();});
     }
   </script>
