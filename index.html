@@ -689,7 +689,6 @@
             let fallingSporesInterval = null;
             const MAX_FALLING_SPORES = 6;
 
-            // Changed multiplier: each shroom adds x1 to the multiplier instead of 0.10
             const getMult = () => 1 + shrooms * 1;
 
             function getPerTapAmount() {
@@ -1072,14 +1071,15 @@
                 render();
             };
 
-            // Prestige function - now resets upgrades and costs spores
+            // Prestige function - resets everything EXCEPT shrooms (multiplier) and playerName
             window.buyShroom = function() {
                 if (spores < shroomCost) return;
                 spores -= shroomCost;
                 shrooms++;
                 shroomCost = Math.floor(shroomCost * 1.15);
                 
-                // Reset all upgrades on prestige
+                // Reset everything except shrooms and playerName
+                spores = 0;
                 perClick = 1;
                 autoRate = 0;
                 upgrades.click.cost = 20;
@@ -1093,7 +1093,7 @@
                 
                 saveGame();
                 render();
-                addChatMessage("🍄 ShroomBot", `ASCENDED! Multiplier is now x${getMult().toFixed(2)}! All upgrades reset.`, true);
+                addChatMessage("🍄 ShroomBot", `ASCENDED! Multiplier is now x${getMult().toFixed(2)}! Everything reset but your power grows!`, true);
             };
 
             function getOnline() { return Math.floor(120 + Math.sin(Date.now() / 4000) * 30); }
@@ -1187,14 +1187,16 @@
                 el.prestigeDiv.innerHTML = `<div class="prestige-block">
                     <div style="font-size:22px;">🌀 ASCEND 🌀</div>
                     <div class="shroom-gain">🍄 Buy Shroom</div>
-                    <div>(+x1 multiplier, resets upgrades)</div>
+                    <div>(+x1 multiplier, resets progress)</div>
                     <div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;">
                         <div>💰 ${shroomCost.toLocaleString()} spores</div>
-                        <div>✨ ${Math.floor(spores).toLocaleString()}</div>
-                        <div>🍄 ${shrooms}</div>
+                        <div>✨ ${Math.floor(spores).toLocaleString()} spores</div>
+                        <div>🍄 ${shrooms} shrooms</div>
                         <div>📈 Next Multi: x${(getMult() + 1).toFixed(2)}</div>
                     </div>
                     <button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:20px; width:100%;">🍄 ASCEND</button>
+                    <div style="font-size:12px; color:#ff9999; margin-top:8px;">⚠️ Resets spores, upgrades & progress</div>
+                    <div style="font-size:12px; color:#89CFF0;">✅ Keeps multiplier & name</div>
                     <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium</button>
                 </div>`;
 
