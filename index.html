@@ -452,6 +452,128 @@
     }
     .panel.active { display: block; }
 
+    /* Shop Styles */
+    .shop-item {
+      background: linear-gradient(135deg, #1a0a2e, #2d1b4e);
+      border: 2px solid #ff69b4;
+      border-radius: 20px;
+      padding: 12px;
+      margin: 8px 0;
+      text-align: center;
+      box-shadow: 0 0 20px rgba(255, 105, 180, 0.3);
+    }
+    .shop-item.premium {
+      border-color: #ffdd00;
+      box-shadow: 0 0 25px rgba(255, 221, 0, 0.4);
+    }
+    .shop-item.ultimate {
+      border-color: #ff4444;
+      box-shadow: 0 0 30px rgba(255, 68, 68, 0.5);
+      background: linear-gradient(135deg, #2d0a0a, #4e1b1b);
+    }
+    .shop-item-title {
+      font-size: 16px;
+      color: #ffb3ff;
+      margin-bottom: 6px;
+    }
+    .shop-item-description {
+      font-size: 11px;
+      color: #cfc;
+      margin: 6px 0;
+    }
+    .price-display {
+      font-size: 18px;
+      color: #ffdd00;
+      margin: 8px 0;
+      text-shadow: 0 0 10px #ffaa00;
+    }
+    .crypto-conversion {
+      background: rgba(0, 0, 0, 0.4);
+      border-radius: 12px;
+      padding: 8px;
+      margin: 8px 0;
+      font-size: 11px;
+      color: #b3b3ff;
+    }
+    .crypto-amount {
+      font-size: 14px;
+      color: #89CFF0;
+      font-weight: bold;
+    }
+    .purchase-btn {
+      background: linear-gradient(135deg, #ff69b4, #7B3FE4);
+      border: 2px solid #ffb3ff;
+      color: white;
+      padding: 10px 25px;
+      font-size: 14px;
+      width: 100%;
+      margin-top: 8px;
+      cursor: pointer;
+      font-family: 'Rubik Glitch', cursive;
+      border-radius: 40px;
+      box-shadow: 0 0 20px #ff69b4;
+      transition: 0.3s;
+    }
+    .purchase-btn.premium-btn {
+      background: linear-gradient(135deg, #ffb347, #ff6600);
+      border-color: #ffdd00;
+      box-shadow: 0 0 20px #ffaa00;
+    }
+    .purchase-btn.ultimate-btn {
+      background: linear-gradient(135deg, #ff4444, #cc0000);
+      border-color: #ff8888;
+      box-shadow: 0 0 25px #ff4444;
+    }
+    .purchase-btn:hover {
+      box-shadow: 0 0 30px #ff69b4;
+      transform: scale(1.02);
+    }
+    .purchase-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+    .owned-badge {
+      background: #00ff88;
+      color: black;
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 11px;
+      display: inline-block;
+      margin: 4px 0;
+    }
+    .loading-spinner {
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      border: 2px solid #fff;
+      border-top: 2px solid transparent;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+    .network-notice {
+      background: rgba(123, 63, 228, 0.3);
+      border: 1px solid #7B3FE4;
+      border-radius: 10px;
+      padding: 8px;
+      margin: 10px 0;
+      font-size: 11px;
+      color: #b3b3ff;
+      text-align: center;
+    }
+    .best-value {
+      background: #ffdd00;
+      color: black;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      margin-left: 5px;
+    }
+
     /* Optimized Leaderboard Styles */
     .leaderboard-container {
       background: rgba(10, 5, 20, 0.9);
@@ -683,6 +805,9 @@
         padding: 10px 6px;
         max-height: 350px;
       }
+      .shop-item {
+        padding: 10px;
+      }
     }
   </style>
 </head>
@@ -774,7 +899,7 @@
     <div id="achievements" class="panel"><div style="text-align:center; padding:20px;">🌈 achievements · coming soon 🌈</div></div>
     <div id="prestige" class="panel"></div>
     <div id="leaderboard" class="panel"></div>
-    <div id="shop" class="panel">🛒 Shop: interdimensional deals soon</div>
+    <div id="shop" class="panel"></div>
 
     <div id="chatContainer">
       <div class="chat-title">
@@ -820,14 +945,29 @@
     function initGame() {
       "use strict";
 
+      // 🌐 POLYGON MAINNET CONFIGURATION
       const POLYGON_CHAIN_ID = 137;
+      const POLYGON_CHAIN_ID_HEX = '0x89';
+      const POLYGON_NETWORK = {
+        chainId: POLYGON_CHAIN_ID_HEX,
+        chainName: 'Polygon Mainnet',
+        nativeCurrency: { name: 'MATIC', symbol: 'MATIC', decimals: 18 },
+        rpcUrls: ['https://polygon-rpc.com/', 'https://rpc-mainnet.maticvigil.com/'],
+        blockExplorerUrls: ['https://polygonscan.com/']
+      };
+      
       const PAYMENT_ADDRESS = '0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
       const MUSHROOM_IMAGE_URL = 'https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png';
 
+      // MATIC price in USD
+      let MATIC_PRICE_USD = 1.15;
+
       let provider = null, signer = null, userAddress = null, maticBalance = '0';
       let playerName = '', hasSetName = false;
+      let isPolygonNetwork = false;
 
       let spores = 0, shrooms = 0, perClick = 1, autoRate = 0, shroomCost = 100000;
+      let purchasedMultiplier = 0;
       const upgrades = {
         click: { name: "🍄 Click Power", cost: 20, owned: 0, mult: 1.15 },
         auto: { name: "🤖 Auto Forager", cost: 50, owned: 0, mult: 1.15 }
@@ -843,6 +983,13 @@
       const expToNextLevel = () => Math.floor(100 * Math.pow(1.5, playerLevel - 1));
       const levelTitles = ["Mycelium Initiate", "Spore Seeker", "Fungal Explorer", "Psychedelic Wanderer", "Cosmic Shroom", "Polygon Tripper", "Ethereal Being", "Transcended"];
 
+      // 🛒 SHOP ITEMS - x200 at £12.99
+      const shopItems = [
+        { id: 'multiplier_x10', name: 'x10 Multiplier', multiplier: 10, priceGBP: 0.99, tier: 'basic' },
+        { id: 'multiplier_x50', name: 'x50 Multiplier', multiplier: 50, priceGBP: 3.99, tier: 'premium' },
+        { id: 'multiplier_x200', name: 'x200 Multiplier', multiplier: 200, priceGBP: 12.99, tier: 'ultimate' }
+      ];
+
       function addExperience(amount) {
         currentExp += amount;
         let needed = expToNextLevel();
@@ -850,6 +997,7 @@
           currentExp -= needed;
           playerLevel++;
           needed = expToNextLevel();
+          addChatMessage(playerName || 'Player', `reached Level ${playerLevel} - ${getLevelTitle()}!`, 'levelup');
         }
         updateLevelDisplay();
       }
@@ -874,14 +1022,12 @@
       const LEADERBOARD_KEY = 'trippyShroomz_leaderboard';
       let playerId = null;
 
-      // 🏆 LEADERBOARD SYSTEM
       let leaderboardData = [];
 
       function initLeaderboard() {
         const stored = localStorage.getItem(LEADERBOARD_KEY);
         if (stored) {
           leaderboardData = JSON.parse(stored);
-          // Filter out any bot entries that might exist from previous versions
           leaderboardData = leaderboardData.filter(p => !p.isBot);
         } else {
           leaderboardData = [];
@@ -890,171 +1036,166 @@
       }
 
       function saveLeaderboard() {
-        try {
-          localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboardData));
-        } catch (e) {
-          console.error('Failed to save leaderboard:', e);
-        }
+        try { localStorage.setItem(LEADERBOARD_KEY, JSON.stringify(leaderboardData)); } catch (e) {}
       }
 
       function updatePlayerOnLeaderboard() {
         const displayName = playerName || (userAddress ? `${userAddress.substring(0, 6)}...` : 'Anon');
-        
         leaderboardData = leaderboardData.filter(p => p.id !== playerId);
-        
         if (displayName) {
-          leaderboardData.push({
-            id: playerId,
-            name: displayName,
-            level: playerLevel,
-            shrooms: shrooms,
-            spores: Math.floor(spores),
-            lastUpdated: Date.now()
-          });
+          leaderboardData.push({ id: playerId, name: displayName, level: playerLevel, shrooms: shrooms, spores: Math.floor(spores), lastUpdated: Date.now() });
         }
-        
-        leaderboardData.sort((a, b) => {
-          if (b.level !== a.level) return b.level - a.level;
-          if (b.shrooms !== a.shrooms) return b.shrooms - a.shrooms;
-          return b.spores - a.spores;
-        });
-        
-        if (leaderboardData.length > 50) {
-          leaderboardData = leaderboardData.slice(0, 50);
-        }
-        
+        leaderboardData.sort((a, b) => b.level - a.level || b.shrooms - a.shrooms || b.spores - a.spores);
+        if (leaderboardData.length > 50) leaderboardData = leaderboardData.slice(0, 50);
         saveLeaderboard();
       }
 
       function renderLeaderboard() {
         const panel = document.getElementById('leaderboard');
         if (!panel || !panel.classList.contains('active')) return;
-        
-        let html = `<div class="leaderboard-container">
-          <div class="leaderboard-header">🌐 COSMIC LEADERBOARD 🌐</div>
-          <div class="leaderboard-subtitle">🏆 Top Shroomers in the Mycelium Network</div>`;
-        
+        let html = `<div class="leaderboard-container"><div class="leaderboard-header">🌐 COSMIC LEADERBOARD 🌐</div><div class="leaderboard-subtitle">🏆 Top Shroomers in the Mycelium Network</div>`;
         if (leaderboardData.length === 0) {
-          html += `<div style="text-align:center; padding:20px; color:#ffb3ff;">
-            🍄 No players yet! Start clicking to appear on the leaderboard!
-          </div>`;
+          html += `<div style="text-align:center; padding:20px; color:#ffb3ff;">🍄 No players yet! Start clicking to appear on the leaderboard!</div>`;
         } else {
-          html += `<table class="leaderboard-table">
-            <thead>
-              <tr>
-                <th class="col-rank">#</th>
-                <th class="col-name">Player</th>
-                <th class="col-level">Lvl</th>
-                <th class="col-shrooms">🍄</th>
-                <th class="col-spores">✨ Spores</th>
-              </tr>
-            </thead>
-            <tbody>`;
-        
-          const top25 = leaderboardData.slice(0, 25);
-          
-          top25.forEach((player, index) => {
+          html += `<table class="leaderboard-table"><thead><tr><th class="col-rank">#</th><th class="col-name">Player</th><th class="col-level">Lvl</th><th class="col-shrooms">🍄</th><th class="col-spores">✨ Spores</th></tr></thead><tbody>`;
+          leaderboardData.slice(0, 25).forEach((player, index) => {
             const rank = index + 1;
-            let rankClass = '';
-            if (rank === 1) rankClass = 'rank-1';
-            else if (rank === 2) rankClass = 'rank-2';
-            else if (rank === 3) rankClass = 'rank-3';
-            
+            let rankClass = rank === 1 ? 'rank-1' : rank === 2 ? 'rank-2' : rank === 3 ? 'rank-3' : '';
             const isCurrentPlayer = player.id === playerId;
             const rowClass = isCurrentPlayer ? 'player-row' : '';
-            
-            const formattedSpores = player.spores >= 1000000 
-              ? (player.spores / 1000000).toFixed(1) + 'M' 
-              : player.spores >= 1000 
-                ? (player.spores / 1000).toFixed(1) + 'K' 
-                : player.spores.toString();
-            
-            html += `<tr class="${rowClass}">
-              <td class="col-rank"><span class="rank-badge ${rankClass}">${rank}</span></td>
-              <td class="col-name">${player.name} ${isCurrentPlayer ? '👈' : ''}</td>
-              <td class="col-level">⭐${player.level}</td>
-              <td class="col-shrooms">🍄${player.shrooms}</td>
-              <td class="col-spores">${formattedSpores}</td>
-            </tr>`;
+            const formattedSpores = player.spores >= 1000000 ? (player.spores / 1000000).toFixed(1) + 'M' : player.spores >= 1000 ? (player.spores / 1000).toFixed(1) + 'K' : player.spores.toString();
+            html += `<tr class="${rowClass}"><td class="col-rank"><span class="rank-badge ${rankClass}">${rank}</span></td><td class="col-name">${player.name} ${isCurrentPlayer ? '👈' : ''}</td><td class="col-level">⭐${player.level}</td><td class="col-shrooms">🍄${player.shrooms}</td><td class="col-spores">${formattedSpores}</td></tr>`;
           });
-          
           html += `</tbody></table>`;
         }
-        
-        html += `<div class="leaderboard-refresh">
-            🔄 Auto-updates • ${leaderboardData.length} players ranked
-          </div>
-        </div>`;
-        
+        html += `<div class="leaderboard-refresh">🔄 Auto-updates • ${leaderboardData.length} players ranked</div></div>`;
         panel.innerHTML = html;
       }
 
       function initPlayerTracking() {
-        playerId = localStorage.getItem(PLAYER_ID_KEY);
-        if (!playerId) {
-          playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-          localStorage.setItem(PLAYER_ID_KEY, playerId);
-        }
-        const stored = localStorage.getItem(TOTAL_PLAYERS_KEY);
-        totalPlayers = stored ? parseInt(stored) : 1;
-        const hasVisited = sessionStorage.getItem('trippyShroomz_visited');
-        if (!hasVisited) {
+        playerId = localStorage.getItem(PLAYER_ID_KEY) || ('player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
+        localStorage.setItem(PLAYER_ID_KEY, playerId);
+        totalPlayers = parseInt(localStorage.getItem(TOTAL_PLAYERS_KEY)) || 1;
+        if (!sessionStorage.getItem('trippyShroomz_visited')) {
           totalPlayers++;
           localStorage.setItem(TOTAL_PLAYERS_KEY, totalPlayers.toString());
           sessionStorage.setItem('trippyShroomz_visited', 'true');
         }
         updateOnlinePlayers();
         setInterval(updateOnlinePlayers, 30000);
-        
         initLeaderboard();
-        setInterval(() => {
-          updatePlayerOnLeaderboard();
-          renderLeaderboard();
-        }, 30000);
+        setInterval(() => { updatePlayerOnLeaderboard(); renderLeaderboard(); }, 30000);
       }
 
       function updateOnlinePlayers() {
-        const hour = new Date().getHours();
-        const dayOfWeek = new Date().getDay();
-        let base = leaderboardData.length || 1;
-        if (hour >= 12 && hour <= 22) base = Math.floor(base * 1.5);
-        else if (hour >= 2 && hour <= 6) base = Math.floor(base * 0.5);
-        if (dayOfWeek === 0 || dayOfWeek === 6) base = Math.floor(base * 1.3);
-        onlinePlayers = Math.max(1, base + Math.floor(Math.sin(new Date().getMinutes() / 10) * 3));
-        if (document.getElementById('chatOnlineCount')) {
-          document.getElementById('chatOnlineCount').innerText = `${onlinePlayers} online`;
+        onlinePlayers = Math.max(1, leaderboardData.length || 1);
+        if (document.getElementById('chatOnlineCount')) document.getElementById('chatOnlineCount').innerText = `${onlinePlayers} online`;
+      }
+
+      const getMult = () => 1 + shrooms + purchasedMultiplier;
+      function getPerTapAmount() { return (perClick * getMult()) * (boosterActive ? 5 : 1); }
+
+      function getCryptoConversion(fiatAmount) {
+        return { matic: (fiatAmount / MATIC_PRICE_USD).toFixed(6), usd: MATIC_PRICE_USD.toFixed(2) };
+      }
+
+      async function switchToPolygonNetwork() {
+        const ethereum = window.ethereum;
+        if (!ethereum) { alert('Please install MetaMask!'); return false; }
+        try {
+          await ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: POLYGON_CHAIN_ID_HEX }] });
+          return true;
+        } catch (switchError) {
+          if (switchError.code === 4902) {
+            try { await ethereum.request({ method: 'wallet_addEthereumChain', params: [POLYGON_NETWORK] }); return true; }
+            catch (addError) { alert('Failed to add Polygon network.'); return false; }
+          }
+          alert('Please switch to Polygon Mainnet in your wallet.');
+          return false;
         }
       }
 
-      const getMult = () => 1 + shrooms * 1;
-      function getPerTapAmount() {
-        return (perClick * getMult()) * (boosterActive ? 5 : 1);
+      async function purchaseMultiplier(multiplierAmount, priceGBP, buttonId) {
+        if (!signer) { alert('Please connect your wallet first!'); return; }
+        if (!isPolygonNetwork) {
+          const switched = await switchToPolygonNetwork();
+          if (!switched) return;
+          await connectWallet();
+          if (!isPolygonNetwork) { alert('Please switch to Polygon Mainnet.'); return; }
+        }
+        const conversion = getCryptoConversion(priceGBP);
+        const maticAmount = ethers.utils.parseEther(conversion.matic);
+        const buyBtn = document.getElementById(buttonId);
+        if (buyBtn) { buyBtn.disabled = true; buyBtn.innerHTML = '<span class="loading-spinner"></span> Processing...'; }
+        try {
+          const tx = await signer.sendTransaction({ to: PAYMENT_ADDRESS, value: maticAmount, chainId: POLYGON_CHAIN_ID });
+          await tx.wait();
+          purchasedMultiplier += multiplierAmount;
+          updateBalance();
+          saveGame();
+          render();
+          renderShop();
+          addChatMessage(playerName || 'Player', `purchased x${multiplierAmount} Permanent Multiplier on Polygon! 🚀💎`, 'levelup');
+          if (buyBtn) { buyBtn.innerHTML = '✅ Purchased!'; setTimeout(() => { buyBtn.innerHTML = `💎 Buy x${multiplierAmount} · £${priceGBP.toFixed(2)}`; buyBtn.disabled = false; }, 3000); }
+        } catch (error) {
+          console.error('Purchase failed:', error);
+          alert(error.code === 'INSUFFICIENT_FUNDS' ? 'Insufficient MATIC balance.' : 'Transaction failed. Please try again.');
+          if (buyBtn) { buyBtn.disabled = false; buyBtn.innerHTML = `💎 Buy x${multiplierAmount} · £${priceGBP.toFixed(2)}`; }
+        }
+      }
+
+      function renderShop() {
+        const panel = document.getElementById('shop');
+        if (!panel || !panel.classList.contains('active')) return;
+
+        let html = `<div style="font-size:20px; text-align:center; margin-bottom:15px;">🛸 COSMIC SHOP 🛸</div>
+          <div class="network-notice">⛓️ All payments processed on <strong>Polygon Mainnet</strong><br><span style="font-size:10px;">Low fees · Fast transactions · MATIC token</span></div>`;
+
+        shopItems.forEach((item, index) => {
+          const conversion = getCryptoConversion(item.priceGBP);
+          const buttonId = `buyBtn_${item.id}`;
+          let tierClass = '';
+          let btnClass = '';
+          if (item.tier === 'premium') { tierClass = ' premium'; btnClass = ' premium-btn'; }
+          else if (item.tier === 'ultimate') { tierClass = ' ultimate'; btnClass = ' ultimate-btn'; }
+          
+          let bestValueBadge = '';
+          if (index === 1) bestValueBadge = '<span class="best-value">BEST VALUE</span>';
+          else if (index === 2) bestValueBadge = '<span class="best-value">MAX POWER</span>';
+
+          html += `<div class="shop-item${tierClass}">
+            <div class="shop-item-title">💎 ${item.name}${bestValueBadge}</div>
+            <div class="shop-item-description">Permanently multiplies all spore earnings by ${item.multiplier}x!</div>
+            <div class="price-display">💷 £${item.priceGBP.toFixed(2)} GBP</div>
+            <div class="crypto-conversion">
+              <div>🔮 Polygon Conversion:</div>
+              <div style="margin-top:3px;"><span>🟣 <span class="crypto-amount">${conversion.matic}</span> MATIC</span></div>
+              <div style="font-size:9px; color:#6a6; margin-top:3px;">* Rate: 1 MATIC ≈ $${conversion.usd} USD</div>
+            </div>
+            <button class="purchase-btn${btnClass}" id="${buttonId}" onclick="window.purchaseMultiplier(${item.multiplier}, ${item.priceGBP}, '${buttonId}')" ${!isPolygonNetwork ? 'disabled' : ''}>
+              ${isPolygonNetwork ? `💎 Buy x${item.multiplier} · £${item.priceGBP.toFixed(2)}` : '🔌 Connect Polygon Wallet'}
+            </button>
+          </div>`;
+        });
+
+        html += `<div style="text-align:center; margin-top:10px; font-size:14px; color:#ffb3ff;">
+          Current Multiplier: x${getMult().toFixed(1)}
+          ${purchasedMultiplier > 0 ? `<span class="owned-badge">+${purchasedMultiplier}x from shop</span>` : ''}
+        </div>
+        <div style="text-align:center; margin-top:10px; font-size:11px; color:#6a6;">More cosmic items coming soon to Polygon...</div>`;
+
+        panel.innerHTML = html;
       }
 
       const el = {
-        spores: document.getElementById("spores"),
-        shrooms: document.getElementById("shrooms"),
-        char: document.getElementById("character"),
-        server: document.getElementById("serverStats"),
-        profile: document.getElementById("profile"),
-        upgradesDiv: document.getElementById("upgrades"),
-        prestigeDiv: document.getElementById("prestige"),
-        saveIndicator: document.getElementById("saveIndicator"),
-        perTapDisplay: document.getElementById("perTapDisplay"),
-        boosterContent: document.getElementById("boosterContent"),
-        chatMessages: document.getElementById("chatMessages"),
-        chatInput: document.getElementById("chatInput"),
-        sendChatBtn: document.getElementById("sendChatBtn"),
-        chatOnlineCount: document.getElementById("chatOnlineCount"),
-        connectWalletBtn: document.getElementById("connectWalletBtn"),
-        walletAddress: document.getElementById("walletAddress"),
-        maticBalance: document.getElementById("maticBalance"),
-        walletInfo: document.getElementById("walletInfo"),
-        usernameModal: document.getElementById("usernameModal"),
-        usernameInput: document.getElementById("usernameInput"),
-        saveUsernameBtn: document.getElementById("saveUsernameBtn"),
-        playerNameDisplay: document.getElementById("playerNameDisplay"),
-        playerNameText: document.getElementById("playerNameText")
+        spores: document.getElementById("spores"), shrooms: document.getElementById("shrooms"), char: document.getElementById("character"),
+        server: document.getElementById("serverStats"), profile: document.getElementById("profile"), upgradesDiv: document.getElementById("upgrades"),
+        prestigeDiv: document.getElementById("prestige"), saveIndicator: document.getElementById("saveIndicator"), perTapDisplay: document.getElementById("perTapDisplay"),
+        boosterContent: document.getElementById("boosterContent"), chatMessages: document.getElementById("chatMessages"), chatInput: document.getElementById("chatInput"),
+        sendChatBtn: document.getElementById("sendChatBtn"), chatOnlineCount: document.getElementById("chatOnlineCount"), connectWalletBtn: document.getElementById("connectWalletBtn"),
+        walletAddress: document.getElementById("walletAddress"), maticBalance: document.getElementById("maticBalance"), walletInfo: document.getElementById("walletInfo"),
+        networkBadge: document.getElementById("networkBadge"), usernameModal: document.getElementById("usernameModal"), usernameInput: document.getElementById("usernameInput"),
+        saveUsernameBtn: document.getElementById("saveUsernameBtn"), playerNameDisplay: document.getElementById("playerNameDisplay"), playerNameText: document.getElementById("playerNameText")
       };
 
       function loadUsername() {
@@ -1062,51 +1203,27 @@
           const saved = localStorage.getItem('trippyShroomz_username');
           if (saved) {
             const data = JSON.parse(saved);
-            if (data.walletAddress && data.username && userAddress && 
-                data.walletAddress.toLowerCase() === userAddress.toLowerCase()) {
-              playerName = data.username;
-              hasSetName = true;
-              return true;
+            if (data.walletAddress && data.username && userAddress && data.walletAddress.toLowerCase() === userAddress.toLowerCase()) {
+              playerName = data.username; hasSetName = true; return true;
             }
           }
         } catch (e) {}
         return false;
       }
 
-      function saveUsername() {
-        if (userAddress && playerName) {
-          try { localStorage.setItem('trippyShroomz_username', JSON.stringify({ walletAddress: userAddress, username: playerName, timestamp: Date.now() })); } catch (e) {}
-        }
-      }
+      function saveUsername() { if (userAddress && playerName) try { localStorage.setItem('trippyShroomz_username', JSON.stringify({ walletAddress: userAddress, username: playerName, timestamp: Date.now() })); } catch (e) {} }
 
-      function showUsernameModal() {
-        if (el.usernameModal) {
-          el.usernameModal.style.display = 'flex';
-          if (el.usernameInput) { el.usernameInput.value = ''; setTimeout(() => el.usernameInput.focus(), 100); }
-        }
-      }
-
+      function showUsernameModal() { if (el.usernameModal) { el.usernameModal.style.display = 'flex'; if (el.usernameInput) { el.usernameInput.value = ''; setTimeout(() => el.usernameInput.focus(), 100); } } }
       function hideUsernameModal() { if (el.usernameModal) el.usernameModal.style.display = 'none'; }
 
       function setPlayerName(name) {
         if (!name || name.trim().length === 0) return false;
         const oldName = playerName;
-        playerName = name.trim().substring(0, 20);
-        hasSetName = true;
-        saveUsername();
-        hideUsernameModal();
-        updatePlayerNameDisplay();
-        updatePlayerOnLeaderboard();
-        
-        // Show join message in chat
-        if (!oldName) {
-          addChatMessage(playerName, null, true);
-        } else if (oldName !== playerName) {
-          addChatMessage(oldName, `changed name to ${playerName}`, 'namechange');
-        }
-        
-        render();
-        return true;
+        playerName = name.trim().substring(0, 20); hasSetName = true;
+        saveUsername(); hideUsernameModal(); updatePlayerNameDisplay(); updatePlayerOnLeaderboard();
+        if (!oldName) addChatMessage(playerName, null, 'join');
+        else if (oldName !== playerName) addChatMessage(oldName, `changed name to ${playerName}`, 'namechange');
+        render(); return true;
       }
 
       function updatePlayerNameDisplay() {
@@ -1116,49 +1233,41 @@
         }
       }
 
-      window.changePlayerName = function() {
-        const newName = prompt('Enter your new cosmic name:', playerName);
-        if (newName && newName.trim().length > 0) setPlayerName(newName);
-      };
+      window.changePlayerName = function() { const newName = prompt('Enter your new cosmic name:', playerName); if (newName && newName.trim().length > 0) setPlayerName(newName); };
+      window.purchaseMultiplier = purchaseMultiplier;
 
       async function connectWallet() {
         let ethereum = window.ethereum || window.trustwallet;
-        if (!ethereum) { alert('No wallet detected!'); return; }
+        if (!ethereum) { alert('No wallet detected! Please install MetaMask.'); return; }
         try {
           const accounts = await ethereum.request({ method: 'eth_requestAccounts' });
           userAddress = accounts[0];
           provider = new ethers.providers.Web3Provider(ethereum);
           signer = provider.getSigner();
+          const network = await provider.getNetwork();
+          isPolygonNetwork = (network.chainId === POLYGON_CHAIN_ID);
+          if (el.networkBadge) { el.networkBadge.textContent = isPolygonNetwork ? '⛓️ Polygon ✓' : '⚠️ Wrong Network'; el.networkBadge.style.borderColor = isPolygonNetwork ? '#00ff88' : '#ff4444'; }
+          if (!isPolygonNetwork) {
+            const switchPrompt = confirm('You are not connected to Polygon Mainnet. Switch to Polygon?');
+            if (switchPrompt) { await switchToPolygonNetwork(); provider = new ethers.providers.Web3Provider(ethereum); signer = provider.getSigner(); const newNetwork = await provider.getNetwork(); isPolygonNetwork = (newNetwork.chainId === POLYGON_CHAIN_ID); if (el.networkBadge) { el.networkBadge.textContent = isPolygonNetwork ? '⛓️ Polygon ✓' : '⚠️ Wrong Network'; el.networkBadge.style.borderColor = isPolygonNetwork ? '#00ff88' : '#ff4444'; } }
+          }
           await updateBalance();
           el.walletAddress.textContent = `${userAddress.substring(0, 6)}...${userAddress.substring(38)}`;
           el.walletInfo.style.display = 'flex';
-          el.connectWalletBtn.textContent = '✅ Connected';
+          el.connectWalletBtn.textContent = isPolygonNetwork ? '✅ Connected' : '⚠️ Switch to Polygon';
           if (!loadUsername()) setTimeout(() => showUsernameModal(), 500);
-          else {
-            // Show welcome back message
-            addChatMessage(playerName, null, 'return');
-          }
-          render();
-        } catch (error) { console.error(error); }
+          else addChatMessage(playerName, null, 'return');
+          render(); renderShop();
+          ethereum.on('chainChanged', () => window.location.reload());
+          ethereum.on('accountsChanged', (accounts) => { if (accounts.length === 0) { userAddress = null; signer = null; isPolygonNetwork = false; el.walletAddress.textContent = 'Not connected'; el.walletInfo.style.display = 'none'; el.connectWalletBtn.textContent = '🔌 Connect Wallet'; if (el.networkBadge) { el.networkBadge.textContent = '⛓️ Polygon'; el.networkBadge.style.borderColor = '#7B3FE4'; } render(); renderShop(); } else { userAddress = accounts[0]; connectWallet(); } });
+        } catch (error) { console.error('Wallet connection failed:', error); alert('Failed to connect wallet.'); }
       }
 
-      async function updateBalance() {
-        if (!provider || !userAddress) return;
-        try { const balance = await provider.getBalance(userAddress); maticBalance = ethers.utils.formatEther(balance); el.maticBalance.textContent = `${parseFloat(maticBalance).toFixed(3)} MATIC`; } catch (e) {}
-      }
+      async function updateBalance() { if (provider && userAddress) try { const balance = await provider.getBalance(userAddress); maticBalance = ethers.utils.formatEther(balance); el.maticBalance.textContent = `${parseFloat(maticBalance).toFixed(4)} MATIC`; } catch (e) {} }
 
-      const SAVE_KEY = 'trippyShroomzSave_v12';
+      const SAVE_KEY = 'trippyShroomzSave_v17_1299';
       function saveGame() {
-        try {
-          localStorage.setItem(SAVE_KEY, JSON.stringify({
-            spores, shrooms, perClick, autoRate, shroomCost,
-            upgrades: {
-              click: { cost: upgrades.click.cost, owned: upgrades.click.owned },
-              auto: { cost: upgrades.auto.cost, owned: upgrades.auto.owned }
-            },
-            playerLevel, currentExp
-          }));
-        } catch (e) {}
+        try { localStorage.setItem(SAVE_KEY, JSON.stringify({ spores, shrooms, perClick, autoRate, shroomCost, upgrades: { click: { cost: upgrades.click.cost, owned: upgrades.click.owned }, auto: { cost: upgrades.auto.cost, owned: upgrades.auto.owned } }, playerLevel, currentExp, purchasedMultiplier })); } catch (e) {}
       }
 
       function loadGame() {
@@ -1166,254 +1275,80 @@
           const saved = localStorage.getItem(SAVE_KEY);
           if (!saved) return false;
           const data = JSON.parse(saved);
-          spores = data.spores ?? 0; shrooms = data.shrooms ?? 0;
-          perClick = data.perClick ?? 1; autoRate = data.autoRate ?? 0;
-          shroomCost = data.shroomCost ?? 100000;
+          spores = data.spores ?? 0; shrooms = data.shrooms ?? 0; perClick = data.perClick ?? 1; autoRate = data.autoRate ?? 0; shroomCost = data.shroomCost ?? 100000;
           if (data.upgrades?.click) { upgrades.click.cost = data.upgrades.click.cost; upgrades.click.owned = data.upgrades.click.owned; }
           if (data.upgrades?.auto) { upgrades.auto.cost = data.upgrades.auto.cost; upgrades.auto.owned = data.upgrades.auto.owned; }
-          playerLevel = data.playerLevel || 1;
-          currentExp = data.currentExp || 0;
+          playerLevel = data.playerLevel || 1; currentExp = data.currentExp || 0; purchasedMultiplier = data.purchasedMultiplier || 0;
           return true;
         } catch (e) { return false; }
       }
 
-      function gainSpores() {
-        const amount = getPerTapAmount();
-        spores += amount;
-        addExperience(amount * 0.8);
-        return amount;
-      }
+      function gainSpores() { const amount = getPerTapAmount(); spores += amount; addExperience(amount * 0.8); return amount; }
 
       function showTapEffect(amount, clientX, clientY) {
-        const floatEl = document.createElement('div');
-        floatEl.className = 'tap-float' + (boosterActive ? ' booster-active' : '');
-        floatEl.textContent = `+${amount.toFixed(1)}`;
-        floatEl.style.left = clientX + 'px';
-        floatEl.style.top = clientY + 'px';
-        document.body.appendChild(floatEl);
-        const burstEl = document.createElement('div');
-        burstEl.className = 'tap-burst' + (boosterActive ? ' booster-active' : '');
-        burstEl.style.left = clientX + 'px';
-        burstEl.style.top = clientY + 'px';
-        document.body.appendChild(burstEl);
+        const floatEl = document.createElement('div'); floatEl.className = 'tap-float' + (boosterActive ? ' booster-active' : ''); floatEl.textContent = `+${amount.toFixed(1)}`; floatEl.style.left = clientX + 'px'; floatEl.style.top = clientY + 'px'; document.body.appendChild(floatEl);
+        const burstEl = document.createElement('div'); burstEl.className = 'tap-burst' + (boosterActive ? ' booster-active' : ''); burstEl.style.left = clientX + 'px'; burstEl.style.top = clientY + 'px'; document.body.appendChild(burstEl);
         setTimeout(() => { floatEl.remove(); burstEl.remove(); }, 800);
       }
 
-      function spawnFallingSpore() {
-        if (!boosterActive) return;
-        const existing = document.querySelectorAll('.falling-spore-img');
-        if (existing.length >= MAX_FALLING_SPORES) existing[0].remove();
-        const spore = document.createElement('div');
-        spore.className = 'falling-spore-img';
-        spore.style.left = Math.random() * (window.innerWidth - 50) + 'px';
-        spore.style.top = '-50px';
-        const img = document.createElement('img');
-        img.src = MUSHROOM_IMAGE_URL;
-        spore.appendChild(img);
-        document.body.appendChild(spore);
-        setTimeout(() => spore.remove(), 5000);
-      }
-
-      function startFallingSpores() {
-        if (fallingSporesInterval) return;
-        spawnFallingSpore();
-        fallingSporesInterval = setInterval(() => { if (boosterActive) spawnFallingSpore(); }, 1800);
-      }
-
-      function stopFallingSpores() {
-        if (fallingSporesInterval) { clearInterval(fallingSporesInterval); fallingSporesInterval = null; }
-        document.querySelectorAll('.falling-spore-img').forEach(s => s.remove());
-      }
+      function spawnFallingSpore() { if (!boosterActive) return; const existing = document.querySelectorAll('.falling-spore-img'); if (existing.length >= MAX_FALLING_SPORES) existing[0].remove(); const spore = document.createElement('div'); spore.className = 'falling-spore-img'; spore.style.left = Math.random() * (window.innerWidth - 50) + 'px'; spore.style.top = '-50px'; const img = document.createElement('img'); img.src = MUSHROOM_IMAGE_URL; spore.appendChild(img); document.body.appendChild(spore); setTimeout(() => spore.remove(), 5000); }
+      function startFallingSpores() { if (fallingSporesInterval) return; spawnFallingSpore(); fallingSporesInterval = setInterval(() => { if (boosterActive) spawnFallingSpore(); }, 1800); }
+      function stopFallingSpores() { if (fallingSporesInterval) { clearInterval(fallingSporesInterval); fallingSporesInterval = null; } document.querySelectorAll('.falling-spore-img').forEach(s => s.remove()); }
 
       let lastTapTime = 0;
-      const TAP_DEBOUNCE = 100;
-
       function processTap(e) {
-        const now = Date.now();
-        if (now - lastTapTime < TAP_DEBOUNCE) return;
-        lastTapTime = now;
+        const now = Date.now(); if (now - lastTapTime < 100) return; lastTapTime = now;
         let clientX, clientY;
-        if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; }
-        else if (e.changedTouches) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; }
-        else { clientX = e.clientX; clientY = e.clientY; }
-
-        if (boosterActive) {
-          boosterEndTime = Date.now() + BOOSTER_DURATION;
-        } else {
-          boosterClicks = Math.min(boosterClicks + 1, BOOSTER_REQUIRED);
-          if (boosterClicks >= BOOSTER_REQUIRED) {
-            boosterActive = true; boosterClicks = 0; boosterEndTime = Date.now() + BOOSTER_DURATION;
-            startFallingSpores();
-          }
-        }
-        const amount = gainSpores();
-        showTapEffect(amount, clientX, clientY);
-        saveGame();
-        render();
+        if (e.touches) { clientX = e.touches[0].clientX; clientY = e.touches[0].clientY; } else if (e.changedTouches) { clientX = e.changedTouches[0].clientX; clientY = e.changedTouches[0].clientY; } else { clientX = e.clientX; clientY = e.clientY; }
+        if (boosterActive) boosterEndTime = Date.now() + BOOSTER_DURATION;
+        else { boosterClicks = Math.min(boosterClicks + 1, BOOSTER_REQUIRED); if (boosterClicks >= BOOSTER_REQUIRED) { boosterActive = true; boosterClicks = 0; boosterEndTime = Date.now() + BOOSTER_DURATION; startFallingSpores(); } }
+        const amount = gainSpores(); showTapEffect(amount, clientX, clientY); saveGame(); render();
       }
 
       el.char.addEventListener("pointerdown", (e) => { e.preventDefault(); processTap(e); });
       el.char.addEventListener("contextmenu", (e) => e.preventDefault());
 
-      setInterval(() => {
-        if (boosterActive && Date.now() > boosterEndTime) {
-          boosterActive = false; boosterEndTime = 0; boosterClicks = 0; stopFallingSpores();
-        }
-        if (autoRate > 0) {
-          const autoGain = autoRate * getMult() * (boosterActive ? 5 : 1);
-          spores += autoGain;
-          addExperience(autoGain * 0.5);
-          saveGame();
-        }
-        render();
-      }, 1000);
+      setInterval(() => { if (boosterActive && Date.now() > boosterEndTime) { boosterActive = false; boosterEndTime = 0; boosterClicks = 0; stopFallingSpores(); } if (autoRate > 0) { const autoGain = autoRate * getMult() * (boosterActive ? 5 : 1); spores += autoGain; addExperience(autoGain * 0.5); saveGame(); } render(); }, 1000);
 
-      window.gameBuy = function(key) {
-        const u = upgrades[key];
-        if (!u || spores < u.cost) return;
-        spores -= u.cost;
-        u.owned++;
-        if (key === "click") perClick++;
-        if (key === "auto") autoRate++;
-        u.cost = Math.floor(u.cost * u.mult);
-        saveGame(); render();
-      };
-
-      window.gameBuyMax = function(key) {
-        const u = upgrades[key];
-        if (!u) return;
-        let count = 0, s = spores, c = u.cost;
-        while (s >= c) { s -= c; count++; c = Math.floor(c * u.mult); }
-        if (count === 0) return;
-        spores = s; u.owned += count;
-        if (key === "click") perClick += count;
-        if (key === "auto") autoRate += count;
-        u.cost = c;
-        saveGame(); render();
-      };
+      window.gameBuy = function(key) { const u = upgrades[key]; if (!u || spores < u.cost) return; spores -= u.cost; u.owned++; if (key === "click") perClick++; if (key === "auto") autoRate++; u.cost = Math.floor(u.cost * u.mult); saveGame(); render(); };
+      window.gameBuyMax = function(key) { const u = upgrades[key]; if (!u) return; let count = 0, s = spores, c = u.cost; while (s >= c) { s -= c; count++; c = Math.floor(c * u.mult); } if (count === 0) return; spores = s; u.owned += count; if (key === "click") perClick += count; if (key === "auto") autoRate += count; u.cost = c; saveGame(); render(); };
 
       window.buyShroom = function() {
-        if (spores < shroomCost) return;
-        spores -= shroomCost;
-        shrooms++;
-        shroomCost = Math.floor(shroomCost * 1.15);
-        
-        spores = 0;
-        perClick = 1;
-        autoRate = 0;
-        upgrades.click.cost = 20;
-        upgrades.click.owned = 0;
-        upgrades.auto.cost = 50;
-        upgrades.auto.owned = 0;
-        boosterClicks = 0;
-        boosterActive = false;
-        boosterEndTime = 0;
-        stopFallingSpores();
-        
-        playerLevel = 1;
-        currentExp = 0;
-        
-        updatePlayerOnLeaderboard();
-        saveGame(); 
-        render();
+        if (spores < shroomCost) return; spores -= shroomCost; shrooms++; shroomCost = Math.floor(shroomCost * 1.15);
+        spores = 0; perClick = 1; autoRate = 0; upgrades.click.cost = 20; upgrades.click.owned = 0; upgrades.auto.cost = 50; upgrades.auto.owned = 0;
+        boosterClicks = 0; boosterActive = false; boosterEndTime = 0; stopFallingSpores(); playerLevel = 1; currentExp = 0;
+        updatePlayerOnLeaderboard(); saveGame(); render();
       };
 
       let chatMessages = [];
-      function addChatMessage(user, text, type) {
-        const messageObj = { 
-          user, 
-          text, 
-          type: type || 'message',
-          timestamp: Date.now() 
-        };
-        chatMessages.push(messageObj);
-        if (chatMessages.length > 50) chatMessages.shift();
-        renderChat();
-      }
+      function addChatMessage(user, text, type) { chatMessages.push({ user, text, type: type || 'message', timestamp: Date.now() }); if (chatMessages.length > 50) chatMessages.shift(); renderChat(); }
       function renderChat() {
-        if (!el.chatMessages) return;
-        let html = '';
+        if (!el.chatMessages) return; let html = '';
         chatMessages.slice(-15).reverse().forEach(msg => {
           const timeStr = new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          
-          if (msg.type === 'join') {
-            html += `<div class="chat-message chat-join">
-              <span class="chat-time">${timeStr}</span>
-              🍄 <span class="chat-user">${msg.user}</span> joined the mycelium network!
-            </div>`;
-          } else if (msg.type === 'return') {
-            html += `<div class="chat-message chat-join">
-              <span class="chat-time">${timeStr}</span>
-              ✨ <span class="chat-user">${msg.user}</span> returned to the trip!
-            </div>`;
-          } else if (msg.type === 'namechange') {
-            html += `<div class="chat-message chat-join">
-              <span class="chat-time">${timeStr}</span>
-              🔄 ${msg.text}
-            </div>`;
-          } else if (msg.type === 'levelup') {
-            html += `<div class="chat-message chat-join">
-              <span class="chat-time">${timeStr}</span>
-              ⭐ <span class="chat-user">${msg.user}</span> ${msg.text}
-            </div>`;
-          } else {
-            html += `<div class="chat-message">
-              <span class="chat-time">${timeStr}</span>
-              <span class="chat-user">${msg.user}:</span> ${msg.text}
-            </div>`;
-          }
+          if (msg.type === 'join') html += `<div class="chat-message chat-join"><span class="chat-time">${timeStr}</span>🍄 <span class="chat-user">${msg.user}</span> joined the mycelium network!</div>`;
+          else if (msg.type === 'return') html += `<div class="chat-message chat-join"><span class="chat-time">${timeStr}</span>✨ <span class="chat-user">${msg.user}</span> returned to the trip!</div>`;
+          else if (msg.type === 'namechange') html += `<div class="chat-message chat-join"><span class="chat-time">${timeStr}</span>🔄 ${msg.text}</div>`;
+          else if (msg.type === 'levelup') html += `<div class="chat-message chat-join"><span class="chat-time">${timeStr}</span>⭐ <span class="chat-user">${msg.user}</span> ${msg.text}</div>`;
+          else html += `<div class="chat-message"><span class="chat-time">${timeStr}</span><span class="chat-user">${msg.user}:</span> ${msg.text}</div>`;
         });
         el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet...</div>';
       }
 
-      function sendChatMessage() {
-        const text = el.chatInput.value.trim();
-        if (!text) return;
-        const displayName = playerName || (userAddress ? `${userAddress.substring(0, 4)}...` : "Anon");
-        addChatMessage(displayName, text, 'message');
-        el.chatInput.value = '';
-      }
+      function sendChatMessage() { const text = el.chatInput.value.trim(); if (!text) return; const displayName = playerName || (userAddress ? `${userAddress.substring(0, 4)}...` : "Anon"); addChatMessage(displayName, text, 'message'); el.chatInput.value = ''; }
 
       function render() {
-        el.spores.innerText = `✨ Spores: ${Math.floor(spores)}`;
-        el.shrooms.innerText = `🍄 Shrooms: ${shrooms}`;
+        el.spores.innerText = `✨ Spores: ${Math.floor(spores)}`; el.shrooms.innerText = `🍄 Shrooms: ${shrooms}`;
         el.server.innerText = `🌍 Online: ${onlinePlayers}  |  👥 Total: ${totalPlayers.toLocaleString()}`;
         el.perTapDisplay.innerHTML = `✨ per tap: ${getPerTapAmount().toFixed(1)} ${boosterActive ? '🔥 x5' : ''}`;
-
         let boosterHtml = '';
-        if (boosterActive) {
-          const remaining = Math.max(0, Math.ceil((boosterEndTime - Date.now()) / 1000));
-          boosterHtml = `<div style="text-align:center;"><div class="booster-timer">⏳ ${remaining}s</div><div style="font-size:14px; color:#ffb3ff;">⚡ x5 ACTIVE ⚡</div><div class="progress-bar-container"><div class="progress-fill" style="width:100%;"></div></div></div>`;
-        } else {
-          const pct = (boosterClicks / BOOSTER_REQUIRED) * 100;
-          boosterHtml = `<div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div><div class="progress-bar-container"><div class="progress-fill" style="width:${pct}%;"></div></div><div style="font-size:13px;">tap 50x for 15s x5 boost</div>`;
-        }
+        if (boosterActive) { const remaining = Math.max(0, Math.ceil((boosterEndTime - Date.now()) / 1000)); boosterHtml = `<div style="text-align:center;"><div class="booster-timer">⏳ ${remaining}s</div><div style="font-size:14px; color:#ffb3ff;">⚡ x5 ACTIVE ⚡</div><div class="progress-bar-container"><div class="progress-fill" style="width:100%;"></div></div></div>`; }
+        else { const pct = (boosterClicks / BOOSTER_REQUIRED) * 100; boosterHtml = `<div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div><div class="progress-bar-container"><div class="progress-fill" style="width:${pct}%;"></div></div><div style="font-size:13px;">tap 50x for 15s x5 boost</div>`; }
         el.boosterContent.innerHTML = boosterHtml;
-
-        el.profile.innerHTML = `<div style="font-size:20px;">🌀 TRIP STATS</div>
-          ${playerName ? `<div style="font-size:18px; color:#ffb3ff;">🧑‍🚀 ${playerName}</div>` : ''}
-          <div>⭐ Level ${playerLevel} · ${getLevelTitle()}</div>
-          <div>⚡ Spores/sec: ${(autoRate * getMult() * (boosterActive ? 5 : 1)).toFixed(2)}</div>
-          <div>👆 Click: ${perClick} | ✨ Multi: x${getMult().toFixed(2)}</div>
-          ${playerName ? `<div class="change-name-link" onclick="window.changePlayerName()">✏️ Change name</div>` : ''}`;
-
-        let upHtml = `<div style="font-size:18px;">⬆️ UPGRADES</div>`;
-        for (let key in upgrades) {
-          const u = upgrades[key];
-          let max = 0, s = spores, c = u.cost;
-          while (s >= c) { s -= c; max++; c = Math.floor(c * u.mult); }
-          upHtml += `<div class="upgrade-card"><div><span style="font-size:18px;">${u.name}</span> | owned: ${u.owned}</div><div>💰 ${u.cost} spores</div><div class="max-buy-info">Max: ${max}</div><div class="button-group"><button onclick="window.gameBuy('${key}')">Buy 1</button><button onclick="window.gameBuyMax('${key}')" ${max===0?'disabled':''}>🔥 MAX</button></div></div>`;
-        }
-        el.upgradesDiv.innerHTML = upHtml;
-
-        const canBuy = spores >= shroomCost;
-        el.prestigeDiv.innerHTML = `<div class="prestige-block"><div style="font-size:22px;">🌀 ASCEND 🌀</div><div class="shroom-gain">🍄 Buy Shroom</div><div>(+x1 multiplier, resets ALL progress including level)</div><div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;"><div>💰 ${shroomCost.toLocaleString()} spores</div><div>✨ ${Math.floor(spores).toLocaleString()} spores</div><div>🍄 ${shrooms} shrooms</div><div>📈 Next Multi: x${(getMult() + 1).toFixed(2)}</div></div><button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:20px; width:100%;">🍄 ASCEND</button><div style="font-size:12px; color:#ff9999; margin-top:8px;">⚠️ Resets spores, upgrades, boost & LEVEL</div><div style="font-size:12px; color:#89CFF0;">✅ Keeps name & multiplier only</div></div>`;
-
-        updateLevelDisplay();
-        renderChat();
-        renderLeaderboard();
-        updatePlayerNameDisplay();
-        updatePlayerOnLeaderboard();
+        el.profile.innerHTML = `<div style="font-size:20px;">🌀 TRIP STATS</div>${playerName ? `<div style="font-size:18px; color:#ffb3ff;">🧑‍🚀 ${playerName}</div>` : ''}<div>⭐ Level ${playerLevel} · ${getLevelTitle()}</div><div>⚡ Spores/sec: ${(autoRate * getMult() * (boosterActive ? 5 : 1)).toFixed(2)}</div><div>👆 Click: ${perClick} | ✨ Multi: x${getMult().toFixed(1)}</div>${purchasedMultiplier > 0 ? `<div style="color:#ffdd00; font-size:12px;">💎 Shop Bonus: +${purchasedMultiplier}x | ⛓️ Polygon</div>` : ''}${playerName ? `<div class="change-name-link" onclick="window.changePlayerName()">✏️ Change name</div>` : ''}`;
+        let upHtml = `<div style="font-size:18px;">⬆️ UPGRADES</div>`; for (let key in upgrades) { const u = upgrades[key]; let max = 0, s = spores, c = u.cost; while (s >= c) { s -= c; max++; c = Math.floor(c * u.mult); } upHtml += `<div class="upgrade-card"><div><span style="font-size:18px;">${u.name}</span> | owned: ${u.owned}</div><div>💰 ${u.cost} spores</div><div class="max-buy-info">Max: ${max}</div><div class="button-group"><button onclick="window.gameBuy('${key}')">Buy 1</button><button onclick="window.gameBuyMax('${key}')" ${max===0?'disabled':''}>🔥 MAX</button></div></div>`; } el.upgradesDiv.innerHTML = upHtml;
+        const canBuy = spores >= shroomCost; el.prestigeDiv.innerHTML = `<div class="prestige-block"><div style="font-size:22px;">🌀 ASCEND 🌀</div><div class="shroom-gain">🍄 Buy Shroom</div><div>(+x1 multiplier, resets ALL progress including level)</div><div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;"><div>💰 ${shroomCost.toLocaleString()} spores</div><div>✨ ${Math.floor(spores).toLocaleString()} spores</div><div>🍄 ${shrooms} shrooms</div><div>📈 Next Multi: x${(getMult() + 1).toFixed(1)}</div></div><button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:20px; width:100%;">🍄 ASCEND</button><div style="font-size:12px; color:#ff9999; margin-top:8px;">⚠️ Resets spores, upgrades, boost & LEVEL</div><div style="font-size:12px; color:#89CFF0;">✅ Keeps name, shop items & base multiplier</div></div>`;
+        updateLevelDisplay(); renderChat(); renderLeaderboard(); renderShop(); updatePlayerNameDisplay(); updatePlayerOnLeaderboard();
       }
 
       el.connectWalletBtn.addEventListener('click', connectWallet);
@@ -1422,39 +1357,13 @@
       el.saveUsernameBtn.addEventListener('click', () => setPlayerName(el.usernameInput.value));
       el.usernameInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') setPlayerName(el.usernameInput.value); });
 
-      document.querySelectorAll(".tab").forEach(tab => {
-        tab.addEventListener("click", () => {
-          document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-          document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
-          tab.classList.add("active");
-          const panelId = tab.dataset.tab;
-          document.getElementById(panelId).classList.add("active");
-          if (panelId === 'leaderboard') {
-            renderLeaderboard();
-          }
-        });
-      });
+      document.querySelectorAll(".tab").forEach(tab => { tab.addEventListener("click", () => { document.querySelectorAll(".tab").forEach(t => t.classList.remove("active")); document.querySelectorAll(".panel").forEach(p => p.classList.remove("active")); tab.classList.add("active"); const panelId = tab.dataset.tab; document.getElementById(panelId).classList.add("active"); if (panelId === 'leaderboard') renderLeaderboard(); else if (panelId === 'shop') renderShop(); }); });
 
-      if (!loadGame()) {
-        spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000;
-        upgrades.click.cost = 20; upgrades.click.owned = 0;
-        upgrades.auto.cost = 50; upgrades.auto.owned = 0;
-        playerLevel = 1; currentExp = 0;
-      }
+      if (!loadGame()) { spores = 0; shrooms = 0; perClick = 1; autoRate = 0; shroomCost = 100000; upgrades.click.cost = 20; upgrades.click.owned = 0; upgrades.auto.cost = 50; upgrades.auto.owned = 0; playerLevel = 1; currentExp = 0; purchasedMultiplier = 0; }
 
-      initPlayerTracking();
-      updateLevelDisplay();
-      updatePlayerOnLeaderboard();
-      render();
-      renderChat();
-      saveGame();
+      initPlayerTracking(); updateLevelDisplay(); updatePlayerOnLeaderboard(); render(); renderChat(); saveGame();
 
-      (async () => {
-        const ethereum = window.ethereum;
-        if (ethereum) {
-          try { const accounts = await ethereum.request({ method: 'eth_accounts' }); if (accounts?.length > 0) await connectWallet(); } catch (e) {}
-        }
-      })();
+      (async () => { const ethereum = window.ethereum; if (ethereum) { try { const accounts = await ethereum.request({ method: 'eth_accounts' }); if (accounts?.length > 0) await connectWallet(); } catch (e) {} } })();
 
       setInterval(saveGame, 5000);
     }
