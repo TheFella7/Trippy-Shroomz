@@ -286,7 +286,6 @@
             color: #cfc;
         }
         
-        /* Character container - centered */
         .character-container {
             display: flex;
             justify-content: center;
@@ -579,7 +578,6 @@
 
         <div id="serverStats"></div>
 
-        <!-- Centered character container -->
         <div class="character-container">
             <div id="character">
                 <img src="https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png" 
@@ -691,7 +689,8 @@
             let fallingSporesInterval = null;
             const MAX_FALLING_SPORES = 6;
 
-            const getMult = () => 1 + shrooms * 0.1;
+            // Changed multiplier: each shroom adds x1 to the multiplier instead of 0.10
+            const getMult = () => 1 + shrooms * 1;
 
             function getPerTapAmount() {
                 return (perClick * getMult()) * (boosterActive ? 5 : 1);
@@ -1073,13 +1072,28 @@
                 render();
             };
 
+            // Prestige function - now resets upgrades and costs spores
             window.buyShroom = function() {
                 if (spores < shroomCost) return;
                 spores -= shroomCost;
                 shrooms++;
                 shroomCost = Math.floor(shroomCost * 1.15);
+                
+                // Reset all upgrades on prestige
+                perClick = 1;
+                autoRate = 0;
+                upgrades.click.cost = 20;
+                upgrades.click.owned = 0;
+                upgrades.auto.cost = 50;
+                upgrades.auto.owned = 0;
+                boosterClicks = 0;
+                boosterActive = false;
+                boosterEndTime = 0;
+                stopFallingSpores();
+                
                 saveGame();
                 render();
+                addChatMessage("🍄 ShroomBot", `ASCENDED! Multiplier is now x${getMult().toFixed(2)}! All upgrades reset.`, true);
             };
 
             function getOnline() { return Math.floor(120 + Math.sin(Date.now() / 4000) * 30); }
@@ -1173,13 +1187,14 @@
                 el.prestigeDiv.innerHTML = `<div class="prestige-block">
                     <div style="font-size:22px;">🌀 ASCEND 🌀</div>
                     <div class="shroom-gain">🍄 Buy Shroom</div>
-                    <div>(+10%)</div>
+                    <div>(+x1 multiplier, resets upgrades)</div>
                     <div style="background:#112211; border-radius:30px; padding:12px; margin:10px 0;">
                         <div>💰 ${shroomCost.toLocaleString()} spores</div>
                         <div>✨ ${Math.floor(spores).toLocaleString()}</div>
                         <div>🍄 ${shrooms}</div>
+                        <div>📈 Next Multi: x${(getMult() + 1).toFixed(2)}</div>
                     </div>
-                    <button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:20px; width:100%;">🍄 BUY</button>
+                    <button onclick="window.buyShroom()" ${!canBuy?'disabled':''} style="font-size:20px; width:100%;">🍄 ASCEND</button>
                     <button onclick="window.sendMaticPayment()" style="background:#7B3FE4; margin-top:15px; width:100%;">💎 Premium</button>
                 </div>`;
 
