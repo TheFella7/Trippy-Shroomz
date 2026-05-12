@@ -21,14 +21,24 @@
     @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, 0) scale(0.8); } 100% { opacity: 0; transform: translate(-50%, -100px) scale(1.5); } }
     @keyframes tapBurst { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0); } 40% { opacity: 0.6; transform: translate(-50%, -50%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(2); } }
     @keyframes sporeFall { 0% { opacity: 0.8; transform: translateY(-50px) rotate(0deg); } 100% { opacity: 0; transform: translateY(105vh) rotate(360deg); } }
-    .tap-float { position: fixed; font-size: 28px; font-weight: bold; pointer-events: none; z-index: 9999; text-shadow: 0 0 12px currentColor, 0 0 25px currentColor; animation: floatUp 0.8s ease-out forwards; font-family: 'Rubik Glitch', cursive; letter-spacing: 2px; white-space: nowrap; will-change: transform, opacity; color: #ffdd00; }
+    .tap-float {
+      position: fixed; font-size: 28px; font-weight: bold; pointer-events: none; z-index: 9999;
+      text-shadow: 0 0 12px currentColor, 0 0 25px currentColor; animation: floatUp 0.8s ease-out forwards;
+      font-family: 'Rubik Glitch', cursive; letter-spacing: 2px; white-space: nowrap; will-change: transform, opacity; color: #ffdd00;
+    }
     .tap-float.booster-active { color: #89CFF0 !important; text-shadow: 0 0 15px #89CFF0, 0 0 30px #89CFF0; }
-    .tap-burst { position: fixed; pointer-events: none; z-index: 9998; width: 40px; height: 40px; border-radius: 50%; background: radial-gradient(circle, rgba(255,200,0,0.8), transparent 70%); animation: tapBurst 0.5s ease-out forwards; will-change: transform, opacity; }
+    .tap-burst {
+      position: fixed; pointer-events: none; z-index: 9998; width: 40px; height: 40px; border-radius: 50%;
+      background: radial-gradient(circle, rgba(255,200,0,0.8), transparent 70%); animation: tapBurst 0.5s ease-out forwards; will-change: transform, opacity;
+    }
     .tap-burst.booster-active { background: radial-gradient(circle, rgba(137,207,240,0.9), transparent 70%); box-shadow: 0 0 20px #89CFF0; }
     .falling-spore-img { position: fixed; pointer-events: none; z-index: 9997; width: 40px; height: 40px; animation: sporeFall 4s ease-in forwards; will-change: transform; filter: drop-shadow(0 0 10px #89CFF0); }
     .falling-spore-img img { width: 100%; height: 100%; object-fit: contain; }
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(10px); }
-    .modal-box { background: linear-gradient(135deg, #1a0a2e, #2d1b4e); border: 3px solid #ff69b4; border-radius: 30px; padding: 30px 20px; max-width: 400px; width: 90%; text-align: center; box-shadow: 0 0 50px #ff69b4, 0 0 100px #7B3FE4; }
+    .modal-box {
+      background: linear-gradient(135deg, #1a0a2e, #2d1b4e); border: 3px solid #ff69b4; border-radius: 30px; padding: 30px 20px;
+      max-width: 400px; width: 90%; text-align: center; box-shadow: 0 0 50px #ff69b4, 0 0 100px #7B3FE4;
+    }
     .modal-title { font-size: 24px; background: linear-gradient(90deg, #ff66ff, #66ffff); -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 10px; }
     .modal-message { font-size: 13px; color: #ffb3ff; margin: 15px 0; line-height: 1.6; background: rgba(0,0,0,0.4); padding: 12px; border-radius: 15px; border: 1px solid #ff69b4; }
     .username-input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 30px; border: 2px solid #ff69b4; background: #0f0f1a; color: #fff; font-family: 'Rubik Glitch', cursive; font-size: 18px; text-align: center; outline: none; box-shadow: inset 0 0 15px #7B3FE4; }
@@ -202,18 +212,65 @@
     function initGame() {
       "use strict";
 
+      // 🔐 YOUR SUPABASE CREDENTIALS - UPDATED ANON KEY
       const SUPABASE_URL = 'https://tqmvtvoftkprcqnavonm.supabase.co';
-      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbXZ0dm9mdGtwcmNxbmF2b25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzM0MDQ4MDAsImV4cCI6MjA0ODk4MDgwMH0.A8kXTZ0C1Q0S1qY1TdxvFnHm3Z0Y0Z0Y0Z0Y0Z0Y0Z0';
-      let supabase = null, supabaseConnected = false;
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbXZ0dm9mdGtwcmNxbmF2b25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg2MDE0OTAsImV4cCI6MjA5NDE3NzQ5MH0.lYHVlkW6Y94q15nbPYqFDoLaHrBDXALHfwAFkWOXu3I';
+      
+      let supabase = null;
+      let supabaseConnected = false;
 
-      try { if(typeof window.supabase!=='undefined') { supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); } } catch(e) {}
+      // Initialize Supabase with better error handling
+      function initSupabase() {
+        try {
+          if (typeof window.supabase !== 'undefined') {
+            supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client created successfully');
+            
+            // Test the connection immediately
+            testSupabaseConnection();
+            return true;
+          } else {
+            console.log('⚠️ Supabase JS library not loaded yet, retrying...');
+            setTimeout(initSupabase, 500);
+            return false;
+          }
+        } catch(e) {
+          console.error('❌ Supabase init error:', e);
+          updateSupabaseStatus(false);
+          return false;
+        }
+      }
+
+      // Test Supabase connection
+      async function testSupabaseConnection() {
+        if (!supabase) return;
+        try {
+          const { data, error } = await supabase.from('online_players').select('player_id', { count: 'exact', head: true });
+          if (error) {
+            console.error('❌ Supabase connection test failed:', error.message);
+            updateSupabaseStatus(false);
+          } else {
+            console.log('✅ Supabase connection test passed! Tables accessible.');
+            updateSupabaseStatus(true);
+            // Fetch initial data
+            fetchStats().then(() => updateOnlinePlayers());
+            fetchChatMessages();
+            fetchServerLeaderboard();
+          }
+        } catch(e) {
+          console.error('❌ Supabase connection test error:', e);
+          updateSupabaseStatus(false);
+        }
+      }
+
+      initSupabase();
 
       const POLYGON_CHAIN_ID=137, POLYGON_CHAIN_ID_HEX='0x89';
       const POLYGON_NETWORK={chainId:POLYGON_CHAIN_ID_HEX,chainName:'Polygon Mainnet',nativeCurrency:{name:'POL',symbol:'POL',decimals:18},rpcUrls:['https://polygon-rpc.com/','https://rpc-mainnet.maticvigil.com/'],blockExplorerUrls:['https://polygonscan.com/']};
       const PAYMENT_ADDRESS='0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
       const MUSHROOM_IMAGE_URL='https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png';
       const POL_PRICE_GBP=0.07, POL_PRICE_USD=0.38;
-      const WALLET_STORAGE_KEY='trippyShroomz_wallet_final';
+      const WALLET_STORAGE_KEY='trippyShroomz_wallet_final2';
 
       let provider=null,signer=null,userAddress=null,polBalance='0',playerName='',hasSetName=false,isPolygonNetwork=false;
       let spores=0,shrooms=0,perClick=1,autoRate=0,shroomCost=100000,purchasedMultiplier=0;
@@ -234,15 +291,148 @@
       function clearWalletState() { try { localStorage.removeItem(WALLET_STORAGE_KEY); } catch(e) {} }
       function getStoredWalletState() { try { const r=localStorage.getItem(WALLET_STORAGE_KEY); if(!r) return null; const d=JSON.parse(r); if(Date.now()-d.timestamp>30*24*60*60*1000){clearWalletState();return null;} return d; } catch(e) { return null; } }
 
-      function updateSupabaseStatus(c){supabaseConnected=c;const el=document.getElementById('supabaseStatus');if(!el)return;if(c){el.textContent='🟢 Supabase Live · Real-time Stats';el.className='supabase-status supabase-connected';}else if(supabase){el.textContent='🟡 Supabase Connecting...';el.className='supabase-status supabase-connecting';}else{el.textContent='🔴 Supabase Offline · Local Mode';el.className='supabase-status supabase-offline';}}
+      function updateSupabaseStatus(c){
+        supabaseConnected=c;
+        const el=document.getElementById('supabaseStatus');
+        if(!el)return;
+        if(c){el.textContent='🟢 Supabase Live · Tracking Active';el.className='supabase-status supabase-connected';}
+        else if(supabase){el.textContent='🟡 Supabase Connecting...';el.className='supabase-status supabase-connecting';}
+        else{el.textContent='🔴 Supabase Offline';el.className='supabase-status supabase-offline';}
+      }
 
-      async function upsertPlayerPresence(){if(!supabase||!playerId)return;try{const{error}=await supabase.from('online_players').upsert({player_id:playerId,wallet_address:userAddress||null,player_name:playerName||null,level:playerLevel,spores:Math.floor(spores),shrooms,purchased_multiplier:purchasedMultiplier,last_seen:new Date().toISOString()},{onConflict:'player_id'});if(!error)updateSupabaseStatus(true);}catch(e){}}
-      async function fetchStats(){if(!supabase)return;try{const fiveMinAgo=new Date(Date.now()-5*60*1000).toISOString();const{data:online,error:oe}=await supabase.from('online_players').select('player_id',{count:'exact'}).gte('last_seen',fiveMinAgo);if(!oe&&online){onlinePlayers=online.length;}const{count,error:ce}=await supabase.from('online_players').select('*',{count:'exact',head:true});if(!ce&&count!==null){totalPlayers=count;}updateSupabaseStatus(true);}catch(e){updateSupabaseStatus(false);}}
-      async function fetchChatMessages(){if(!supabase)return;try{const{data,error}=await supabase.from('chat_messages').select('*').order('created_at',{ascending:false}).limit(30);if(!error&&data){chatMessages=data.map(m=>({user:m.player_name||'Anon',text:m.message,type:'message',timestamp:new Date(m.created_at).getTime()})).reverse();renderChat();}}catch(e){}}
-      async function sendChatToSupabase(message){if(!supabase||!playerId)return;try{const{error}=await supabase.from('chat_messages').insert({player_id:playerId,player_name:playerName||(userAddress?`${userAddress.substring(0,6)}...`:'Anon'),wallet_address:userAddress||null,message,timestamp:new Date().toISOString()});if(!error)await fetchChatMessages();}catch(e){}}
-      async function fetchServerLeaderboard(){if(!supabase)return;try{const{data,error}=await supabase.from('leaderboard').select('*').order('level',{ascending:false}).order('shrooms',{ascending:false}).limit(25);if(!error&&data){leaderboardData=data.map(p=>({id:p.player_id,name:p.player_name,level:p.level,shrooms:p.shrooms,spores:p.spores,lastUpdated:p.last_updated}));renderLeaderboard();}}catch(e){}}
-      async function upsertLeaderboardEntry(){if(!supabase||!playerId)return;try{const{error}=await supabase.from('leaderboard').upsert({player_id:playerId,wallet_address:userAddress||null,player_name:playerName||'Anon',level:playerLevel,shrooms,spores:Math.floor(spores),purchased_multiplier:purchasedMultiplier,last_updated:new Date().toISOString()},{onConflict:'player_id'});if(!error)updateSupabaseStatus(true);}catch(e){}}
-      async function recordTransaction(txHash,itemId,itemName,multAmt,priceGBP,polAmt){if(!supabase||!playerId)return;try{await supabase.from('transactions').insert({player_id:playerId,wallet_address:userAddress,tx_hash:txHash,item_id:itemId,item_name:itemName,multiplier_amount:multAmt,price_gbp:priceGBP,pol_amount:polAmt,status:'confirmed',confirmed_at:new Date().toISOString()});}catch(e){}}
+      async function upsertPlayerPresence(){
+        if(!supabase||!playerId) { console.log('⏭️ Skipping presence update - no supabase or playerId'); return; }
+        try{
+          console.log('📤 Upserting player presence:', playerId, playerName);
+          const {data, error} = await supabase.from('online_players').upsert({
+            player_id:playerId,wallet_address:userAddress||null,player_name:playerName||null,
+            level:playerLevel,spores:Math.floor(spores),shrooms,purchased_multiplier:purchasedMultiplier,
+            last_seen:new Date().toISOString()
+          },{onConflict:'player_id'});
+          if(error) {
+            console.error('❌ Presence upsert error:', error.message, error.details, error.hint);
+          } else {
+            console.log('✅ Player presence updated successfully');
+            updateSupabaseStatus(true);
+          }
+        }catch(e){
+          console.error('❌ Presence upsert exception:', e);
+        }
+      }
+
+      async function fetchStats(){
+        if(!supabase) { console.log('⏭️ Skipping stats fetch - no supabase'); return; }
+        try{
+          const fiveMinAgo=new Date(Date.now()-5*60*1000).toISOString();
+          
+          const {data:online,error:oe,count:onlineCount} = await supabase.from('online_players').select('player_id',{count:'exact'}).gte('last_seen',fiveMinAgo);
+          if(oe) {
+            console.error('❌ Online players fetch error:', oe.message);
+          } else {
+            onlinePlayers = online ? online.length : (onlineCount || 0);
+            console.log('📊 Online players:', onlinePlayers);
+          }
+          
+          const {count,error:ce} = await supabase.from('online_players').select('*',{count:'exact',head:true});
+          if(ce) {
+            console.error('❌ Total players fetch error:', ce.message);
+          } else {
+            totalPlayers = count || 0;
+            console.log('📊 Total players:', totalPlayers);
+          }
+          
+          if(!oe && !ce) updateSupabaseStatus(true);
+        }catch(e){
+          console.error('❌ Stats fetch exception:', e);
+          updateSupabaseStatus(false);
+        }
+      }
+
+      async function fetchChatMessages(){
+        if(!supabase) return;
+        try{
+          const {data,error}=await supabase.from('chat_messages').select('*').order('created_at',{ascending:false}).limit(30);
+          if(error) {
+            console.error('❌ Chat fetch error:', error.message);
+          } else if(data){
+            console.log('📨 Fetched', data.length, 'chat messages');
+            chatMessages=data.map(m=>({user:m.player_name||'Anon',text:m.message,type:'message',timestamp:new Date(m.created_at).getTime()})).reverse();
+            renderChat();
+          }
+        }catch(e){
+          console.error('❌ Chat fetch exception:', e);
+        }
+      }
+
+      async function sendChatToSupabase(message){
+        if(!supabase||!playerId) return;
+        try{
+          const {error}=await supabase.from('chat_messages').insert({
+            player_id:playerId,player_name:playerName||(userAddress?`${userAddress.substring(0,6)}...`:'Anon'),
+            wallet_address:userAddress||null,message,timestamp:new Date().toISOString()
+          });
+          if(error) {
+            console.error('❌ Chat send error:', error.message);
+          } else {
+            console.log('✅ Chat message sent');
+            await fetchChatMessages();
+          }
+        }catch(e){
+          console.error('❌ Chat send exception:', e);
+        }
+      }
+
+      async function fetchServerLeaderboard(){
+        if(!supabase) return;
+        try{
+          const {data,error}=await supabase.from('leaderboard').select('*').order('level',{ascending:false}).order('shrooms',{ascending:false}).limit(25);
+          if(error) {
+            console.error('❌ Leaderboard fetch error:', error.message);
+          } else if(data){
+            console.log('🏆 Fetched', data.length, 'leaderboard entries');
+            leaderboardData=data.map(p=>({id:p.player_id,name:p.player_name,level:p.level,shrooms:p.shrooms,spores:p.spores,lastUpdated:p.last_updated}));
+            renderLeaderboard();
+          }
+        }catch(e){
+          console.error('❌ Leaderboard fetch exception:', e);
+        }
+      }
+
+      async function upsertLeaderboardEntry(){
+        if(!supabase||!playerId) return;
+        try{
+          const {error}=await supabase.from('leaderboard').upsert({
+            player_id:playerId,wallet_address:userAddress||null,player_name:playerName||'Anon',
+            level:playerLevel,shrooms,spores:Math.floor(spores),purchased_multiplier:purchasedMultiplier,
+            last_updated:new Date().toISOString()
+          },{onConflict:'player_id'});
+          if(error) {
+            console.error('❌ Leaderboard upsert error:', error.message);
+          } else {
+            console.log('✅ Leaderboard entry updated');
+            updateSupabaseStatus(true);
+          }
+        }catch(e){
+          console.error('❌ Leaderboard upsert exception:', e);
+        }
+      }
+
+      async function recordTransaction(txHash,itemId,itemName,multAmt,priceGBP,polAmt){
+        if(!supabase||!playerId) return;
+        try{
+          const {error}=await supabase.from('transactions').insert({
+            player_id:playerId,wallet_address:userAddress,tx_hash:txHash,item_id:itemId,item_name:itemName,
+            multiplier_amount:multAmt,price_gbp:priceGBP,pol_amount:polAmt,status:'confirmed',confirmed_at:new Date().toISOString()
+          });
+          if(error) {
+            console.error('❌ Transaction record error:', error.message);
+          } else {
+            console.log('✅ Transaction recorded:', txHash);
+          }
+        }catch(e){
+          console.error('❌ Transaction record exception:', e);
+        }
+      }
 
       const el=(id)=>document.getElementById(id);
       const getMult=()=>1+shrooms+purchasedMultiplier;
@@ -257,9 +447,14 @@
       function addChatMessage(user,text,type){chatMessages.push({user,text,type:type||'message',timestamp:Date.now()});if(chatMessages.length>100)chatMessages.shift();renderChat();}
       function renderChat(){const mc=el('chatMessages');if(!mc)return;let h='';const msgs=chatMessages.slice(-20).reverse();msgs.forEach(m=>{const ts=new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});if(m.type==='join')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>🍄 <span class="chat-user">${m.user}</span> joined!</div>`;else if(m.type==='return')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>✨ <span class="chat-user">${m.user}</span> returned!</div>`;else if(m.type==='levelup')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>⭐ <span class="chat-user">${m.user}</span> ${m.text}</div>`;else h+=`<div class="chat-message"><span class="chat-time">${ts}</span><span class="chat-user">${m.user}:</span> ${m.text}</div>`;});mc.innerHTML=h||'<div style="color:#6a6;">✨ chat quiet...</div>';}
 
-      function initPlayerTracking(){playerId=localStorage.getItem(PLAYER_ID_KEY)||('player_'+Date.now()+'_'+Math.random().toString(36).substr(2,9));localStorage.setItem(PLAYER_ID_KEY,playerId);updateOnlinePlayers();setInterval(updateOnlinePlayers,15000);setInterval(()=>{upsertLeaderboardEntry();fetchServerLeaderboard();},30000);}
+      function initPlayerTracking(){playerId=localStorage.getItem(PLAYER_ID_KEY)||('player_'+Date.now()+'_'+Math.random().toString(36).substr(2,9));localStorage.setItem(PLAYER_ID_KEY,playerId);console.log('🆔 Player ID:', playerId);updateOnlinePlayers();setInterval(updateOnlinePlayers,15000);setInterval(()=>{upsertLeaderboardEntry();fetchServerLeaderboard();},30000);}
 
-      async function updateOnlinePlayers(){if(supabase){await fetchStats();if(playerId)await upsertPlayerPresence();}else{onlinePlayers=Math.max(1,leaderboardData.length||1);totalPlayers=Math.max(onlinePlayers,totalPlayers);}el('serverStats').innerText=`🌍 Online: ${onlinePlayers} | 👥 Total: ${totalPlayers.toLocaleString()}`;if(el('chatOnlineCount'))el('chatOnlineCount').innerText=`${onlinePlayers} online`;}
+      async function updateOnlinePlayers(){
+        if(supabase){await fetchStats();if(playerId)await upsertPlayerPresence();}
+        else{onlinePlayers=Math.max(1,leaderboardData.length||1);totalPlayers=Math.max(onlinePlayers,totalPlayers);}
+        el('serverStats').innerText=`🌍 Online: ${onlinePlayers} | 👥 Total: ${totalPlayers.toLocaleString()}`;
+        if(el('chatOnlineCount'))el('chatOnlineCount').innerText=`${onlinePlayers} online`;
+      }
 
       async function switchToPolygonNetwork(){const et=window.ethereum;if(!et)return false;try{await et.request({method:'wallet_switchEthereumChain',params:[{chainId:POLYGON_CHAIN_ID_HEX}]});return true;}catch(e){if(e.code===4902){try{await et.request({method:'wallet_addEthereumChain',params:[POLYGON_NETWORK]});return true;}catch(e2){}}return false;}}
 
@@ -286,7 +481,7 @@
 
       async function updateBalance(){if(provider&&userAddress)try{const b=await provider.getBalance(userAddress);polBalance=ethers.utils.formatEther(b);el('maticBalance').textContent=`${parseFloat(polBalance).toFixed(2)} POL`;}catch(e){}}
 
-      const SAVE_KEY='trippyShroomzSave_v27';
+      const SAVE_KEY='trippyShroomzSave_v28_debug';
       function saveGame(){try{const data={spores,shrooms,perClick,autoRate,shroomCost,upgrades:{click:{cost:upgrades.click.cost,owned:upgrades.click.owned},auto:{cost:upgrades.auto.cost,owned:upgrades.auto.owned}},playerLevel,currentExp,purchasedMultiplier};localStorage.setItem(SAVE_KEY,JSON.stringify(data));}catch(e){}}
       function loadGame(){try{const s=localStorage.getItem(SAVE_KEY);if(!s)return false;const d=JSON.parse(s);spores=d.spores??0;shrooms=d.shrooms??0;perClick=d.perClick??1;autoRate=d.autoRate??0;shroomCost=d.shroomCost??100000;if(d.upgrades?.click){upgrades.click.cost=d.upgrades.click.cost;upgrades.click.owned=d.upgrades.click.owned;}if(d.upgrades?.auto){upgrades.auto.cost=d.upgrades.auto.cost;upgrades.auto.owned=d.upgrades.auto.owned;}playerLevel=d.playerLevel||1;currentExp=d.currentExp||0;purchasedMultiplier=d.purchasedMultiplier||0;return true;}catch(e){return false;}}
 
@@ -331,9 +526,6 @@
 
       if(!loadGame()){spores=0;shrooms=0;perClick=1;autoRate=0;shroomCost=100000;upgrades.click.cost=20;upgrades.click.owned=0;upgrades.auto.cost=50;upgrades.auto.owned=0;playerLevel=1;currentExp=0;purchasedMultiplier=0;}
       initPlayerTracking();updateLevelDisplay();render();renderChat();saveGame();
-
-      if(supabase){fetchStats().then(()=>updateOnlinePlayers());fetchChatMessages();fetchServerLeaderboard();}
-      updateSupabaseStatus(false);
 
       async function attemptAutoReconnect(maxRetries=8,baseDelay=500){const et=window.ethereum;if(!et)return;const stored=getStoredWalletState();if(!stored)return;for(let i=0;i<maxRetries;i++){const delay=baseDelay*(i+1);const success=await silentReconnect();if(success){if(userAddress&&!hasSetName){if(!loadUsername()&&!stored.name){setTimeout(()=>{el('usernameModal').style.display='flex';},600);}}return;}await new Promise(r=>setTimeout(r,delay));}}
 
