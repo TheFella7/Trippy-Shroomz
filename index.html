@@ -617,7 +617,7 @@
         <div id="chatContainer">
             <div class="chat-title">
                 <span>💬 TRIPPY CHAT · ONLINE PLAYERS</span>
-                <span style="margin-left:auto; font-size:11px;" id="chatOnlineCount">2 online</span>
+                <span style="margin-left:auto; font-size:11px;" id="chatOnlineCount">0 online</span>
             </div>
             <div id="chatMessages"></div>
             <div class="chat-input-area">
@@ -688,6 +688,82 @@
             let lastTapTimeForDecay = 0;
             let fallingSporesInterval = null;
             const MAX_FALLING_SPORES = 6;
+
+            // Player tracking
+            let totalPlayers = 0;
+            let onlinePlayers = 0;
+            const PLAYER_ID_KEY = 'trippyShroomz_playerId';
+            const TOTAL_PLAYERS_KEY = 'trippyShroomz_totalPlayers';
+            let playerId = null;
+
+            // Initialize player tracking
+            function initPlayerTracking() {
+                // Get or create player ID
+                playerId = localStorage.getItem(PLAYER_ID_KEY);
+                if (!playerId) {
+                    playerId = 'player_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem(PLAYER_ID_KEY, playerId);
+                }
+
+                // Get total players from localStorage
+                const stored = localStorage.getItem(TOTAL_PLAYERS_KEY);
+                if (stored) {
+                    totalPlayers = parseInt(stored);
+                } else {
+                    totalPlayers = 12500 + Math.floor(Math.random() * 800);
+                    localStorage.setItem(TOTAL_PLAYERS_KEY, totalPlayers.toString());
+                }
+
+                // Increment total players (this player is new to this browser)
+                const hasVisited = sessionStorage.getItem('trippyShroomz_visited');
+                if (!hasVisited) {
+                    totalPlayers++;
+                    localStorage.setItem(TOTAL_PLAYERS_KEY, totalPlayers.toString());
+                    sessionStorage.setItem('trippyShroomz_visited', 'true');
+                }
+
+                // Calculate online players based on time-based algorithm
+                updateOnlinePlayers();
+                
+                // Update online players every 30 seconds
+                setInterval(updateOnlinePlayers, 30000);
+            }
+
+            function updateOnlinePlayers() {
+                const hour = new Date().getHours();
+                const minute = new Date().getMinutes();
+                const dayOfWeek = new Date().getDay();
+                
+                // Base online count varies by time of day (more active during certain hours)
+                let baseOnline = 80;
+                
+                // Peak hours: 12pm-10pm UTC
+                if (hour >= 12 && hour <= 22) {
+                    baseOnline = 120 + Math.floor(Math.random() * 60);
+                }
+                // Late night: 2am-6am
+                else if (hour >= 2 && hour <= 6) {
+                    baseOnline = 30 + Math.floor(Math.random() * 30);
+                }
+                // Morning/Evening
+                else {
+                    baseOnline = 60 + Math.floor(Math.random() * 40);
+                }
+                
+                // Weekends have more players
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    baseOnline = Math.floor(baseOnline * 1.3);
+                }
+                
+                // Add some variation based on minute
+                const variation = Math.floor(Math.sin(minute / 10) * 15);
+                onlinePlayers = Math.max(10, baseOnline + variation);
+                
+                // Update display
+                if (el.chatOnlineCount) {
+                    el.chatOnlineCount.innerText = `${onlinePlayers} online`;
+                }
+            }
 
             const getMult = () => 1 + shrooms * 1;
 
@@ -1071,14 +1147,12 @@
                 render();
             };
 
-            // Prestige function - resets everything EXCEPT shrooms (multiplier) and playerName
             window.buyShroom = function() {
                 if (spores < shroomCost) return;
                 spores -= shroomCost;
                 shrooms++;
                 shroomCost = Math.floor(shroomCost * 1.15);
                 
-                // Reset everything except shrooms and playerName
                 spores = 0;
                 perClick = 1;
                 autoRate = 0;
@@ -1096,11 +1170,12 @@
                 addChatMessage("🍄 ShroomBot", `ASCENDED! Multiplier is now x${getMult().toFixed(2)}! Everything reset but your power grows!`, true);
             };
 
-            function getOnline() { return Math.floor(120 + Math.sin(Date.now() / 4000) * 30); }
             function getTotalPlayers() {
-                let stored = localStorage.getItem("tp_trippy_v3");
-                if (!stored) { stored = 12500 + Math.floor(Math.random() * 800); localStorage.setItem("tp_trippy_v3", stored); }
-                return parseInt(stored);
+                return totalPlayers;
+            }
+
+            function getOnline() {
+                return onlinePlayers;
             }
 
             let chatMessages = [
@@ -1121,7 +1196,7 @@
                     html += `<div class="chat-message"><span class="chat-time">${timeStr}</span><span class="${msg.isBot ? 'chat-bot' : 'chat-user'}">${msg.user}:</span> ${msg.text}</div>`;
                 });
                 el.chatMessages.innerHTML = html || '<div style="color:#6a6;">✨ chat quiet...</div>';
-                el.chatOnlineCount.innerText = `${Math.floor(2 + Math.random()*5)} online`;
+                el.chatOnlineCount.innerText = `${onlinePlayers} online`;
             }
 
             function sendChatMessage() {
@@ -1135,7 +1210,7 @@
             function render() {
                 el.spores.innerText = `✨ Spores: ${Math.floor(spores)}`;
                 el.shrooms.innerText = `🍄 Shrooms: ${shrooms}`;
-                el.server.innerText = `🌍 Online: ${getOnline()}  |  👥 Total: ${getTotalPlayers()}`;
+                el.server.innerText = `🌍 Online: ${getOnline()}  |  👥 Total: ${getTotalPlayers().toLocaleString()}`;
 
                 const tapVal = getPerTapAmount();
                 el.perTapDisplay.innerHTML = `✨ per tap: ${tapVal.toFixed(1)} ${boosterActive ? '🔥 x5' : ''}`;
@@ -1228,6 +1303,9 @@
                 upgrades.auto.cost = 50; upgrades.auto.owned = 0;
             }
 
+            // Initialize player tracking
+            initPlayerTracking();
+            
             render();
             renderChat();
             saveGame();
