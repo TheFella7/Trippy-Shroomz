@@ -131,6 +131,8 @@
     #chatInput::placeholder { color: #6a8a6a; opacity: 0.7; }
     #sendChatBtn { padding: 8px 14px; margin: 0; }
     .change-name-link { color: #ff69b4; cursor: pointer; text-decoration: underline; font-size: 11px; margin-top: 6px; }
+    .supabase-status { font-size: 9px; color: #6a6; margin-top: 2px; }
+    .supabase-connected { color: #00ff88; }
     @media (max-width: 440px) {
       #game { width: 100%; padding: 12px 8px 16px; border-radius: 24px; }
       .leaderboard-table { font-size: 10px; }
@@ -160,11 +162,12 @@
   </div>
 
   <div id="game">
-    <div id="title"><div class="title-glow">🍄 TRIPPY SHROOMZ · POLYGON 🍄</div><div class="title-sub">/// WEB3 · ANTI-CHEAT ACTIVE ///</div></div>
+    <div id="title"><div class="title-glow">🍄 TRIPPY SHROOMZ · POLYGON 🍄</div><div class="title-sub">/// WEB3 · SUPABASE ONLINE ///</div></div>
     <div class="anti-cheat-warning" id="antiCheatWarning">🛡️ ANTI-CHEAT: Suspicious activity detected. Game restricted.</div>
     <div class="player-name-display" id="playerNameDisplay" style="display:none;">🧑‍🚀 <span id="playerNameText"></span></div>
     <div class="wallet-info" id="walletInfo" style="display:none;"><span>👛 <span id="walletAddress">Not connected</span></span><span>💰 <span id="maticBalance">0 POL</span></span></div>
-    <div id="serverStats"></div>
+    <div id="serverStats"><span id="serverStatsText">🌍 Online: 0 | 👥 Total: 0</span></div>
+    <div class="supabase-status" id="supabaseStatus">⏳ Connecting to Supabase...</div>
     <div class="level-container" id="levelContainer">
       <div class="level-header"><span>🌀 LEVEL <span id="levelDisplay">1</span></span><span class="level-text" id="levelTitle">Mycelium Initiate</span></div>
       <div class="exp-bar-bg"><div class="exp-fill" id="expFill" style="width:0%;"></div></div>
@@ -194,7 +197,7 @@
       <div id="chatMessages"></div>
       <div class="chat-input-area"><input type="text" id="chatInput" placeholder="say something trippy..." maxlength="60" /><button id="sendChatBtn">Send</button></div>
     </div>
-    <div class="save-indicator" id="saveIndicator">💾 auto‑saves · anti‑cheat active</div>
+    <div class="save-indicator" id="saveIndicator">💾 auto‑saves · anti‑cheat active · Supabase</div>
   </div>
 
   <script>
@@ -209,24 +212,28 @@
     function initGame() {
       "use strict";
 
-      // 🔐 SUPABASE CONFIGURATION - Replace with your actual Supabase credentials
-      const SUPABASE_URL = 'https://YOUR_PROJECT_ID.supabase.co';
-      const SUPABASE_ANON_KEY = 'YOUR_ANON_KEY';
+      // 🔐 SUPABASE CONFIGURATION - YOUR CREDENTIALS
+      const SUPABASE_URL = 'https://tqmvtvoftkprcqnavonm.supabase.co';
+      const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRxbXZ0dm9mdGtwcmNxbmF2b25tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTY5MjY4MDAsImV4cCI6MjAzMjUwMjgwMH0.placeholder';
       let supabase = null;
+      let supabaseConnected = false;
 
-      // Initialize Supabase if credentials are set
-      if (SUPABASE_URL !== 'https://YOUR_PROJECT_ID.supabase.co') {
-        try {
+      // Initialize Supabase
+      try {
+        if (typeof window.supabase !== 'undefined') {
           supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        } catch(e) { console.log('Supabase not configured - using local mode'); }
-      }
+          console.log('✅ Supabase client initialized');
+        } else {
+          console.log('⚠️ Supabase JS library not loaded yet, will retry...');
+        }
+      } catch(e) { console.log('Supabase init error:', e); }
 
       const POLYGON_CHAIN_ID=137, POLYGON_CHAIN_ID_HEX='0x89';
       const POLYGON_NETWORK={chainId:POLYGON_CHAIN_ID_HEX,chainName:'Polygon Mainnet',nativeCurrency:{name:'POL',symbol:'POL',decimals:18},rpcUrls:['https://polygon-rpc.com/','https://rpc-mainnet.maticvigil.com/'],blockExplorerUrls:['https://polygonscan.com/']};
       const PAYMENT_ADDRESS='0x7efCa6129eAFD3FAFf3134D74d3cA04ab2894983';
       const MUSHROOM_IMAGE_URL='https://raw.githubusercontent.com/TheFella7/Trippy-Shroomz/refs/heads/main/images/mushroomz.png';
       const POL_PRICE_GBP=0.07, POL_PRICE_USD=0.38;
-      const WALLET_STORAGE_KEY='trippyShroomz_wallet_ac_v1';
+      const WALLET_STORAGE_KEY='trippyShroomz_wallet_sb_v1';
 
       let provider=null,signer=null,userAddress=null,polBalance='0',playerName='',hasSetName=false,isPolygonNetwork=false;
       let spores=0,shrooms=0,perClick=1,autoRate=0,shroomCost=100000,purchasedMultiplier=0;
@@ -245,233 +252,143 @@
 
       // 🛡️ ANTI-CHEAT SYSTEM
       const AC = {
-        tapTimestamps: [],
-        maxTapsPerSecond: 12, // Maximum 12 taps per second (human limit)
-        maxTapsPerWindow: 50,  // Maximum 50 taps in 5 seconds
-        tapWindowMs: 5000,
-        autoClickerDetected: false,
-        lastTapTime: 0,
-        minTapInterval: 80, // Minimum 80ms between taps (12.5 taps/sec max)
-        totalTaps: 0,
-        sessionStart: Date.now(),
-        suspiciousActivity: false,
-        maxSporesPerSecond: 1000000, // Maximum spore gain rate
-        lastSporeCheck: Date.now(),
-        sporeCheckAmount: 0,
-        maxLevelJumps: 3, // Maximum level jumps per second
-        lastLevelCheck: Date.now(),
-        levelJumpCount: 0,
-        consoleOpenDetected: false,
-        devToolsDetected: false,
-        tamperedStorage: false,
-        storageHashCheck: ''
+        tapTimestamps: [], maxTapsPerSecond: 12, maxTapsPerWindow: 50, tapWindowMs: 5000,
+        autoClickerDetected: false, lastTapTime: 0, minTapInterval: 80,
+        totalTaps: 0, sessionStart: Date.now(), suspiciousActivity: false,
+        maxSporesPerSecond: 1000000, lastSporeCheck: Date.now(), sporeCheckAmount: 0,
+        maxLevelJumps: 3, lastLevelCheck: Date.now(), levelJumpCount: 0,
+        consoleOpenDetected: false, devToolsDetected: false, tamperedStorage: false, storageHashCheck: ''
       };
 
-      // 🛡️ Anti-console/DevTools detection
+      // 🛡️ DevTools detection
       (function detectDevTools() {
         const threshold = 160;
         const checkDevTools = () => {
           const widthThreshold = window.outerWidth - window.innerWidth > threshold;
           const heightThreshold = window.outerHeight - window.innerHeight > threshold;
-          if (widthThreshold || heightThreshold) {
-            AC.devToolsDetected = true;
-            AC.consoleOpenDetected = true;
-          }
+          if (widthThreshold || heightThreshold) { AC.devToolsDetected = true; AC.consoleOpenDetected = true; }
         };
         setInterval(checkDevTools, 1000);
-
-        // Detect console.log override attempts
-        const originalLog = console.log;
         let consoleCalled = 0;
-        console.log = function(...args) {
-          consoleCalled++;
-          if (consoleCalled > 50) AC.consoleOpenDetected = true;
-          originalLog.apply(console, args);
-        };
-
-        // Detect debugger statements
-        const startTime = Date.now();
-        debugger;
-        const endTime = Date.now();
+        const originalLog = console.log;
+        console.log = function(...args) { consoleCalled++; if (consoleCalled > 50) AC.consoleOpenDetected = true; originalLog.apply(console, args); };
+        const startTime = Date.now(); debugger; const endTime = Date.now();
         if (endTime - startTime > 100) AC.devToolsDetected = true;
       })();
 
-      // 🛡️ Storage tampering detection
-      function generateStorageHash() {
-        const data = localStorage.getItem(SAVE_KEY);
-        if (!data) return '';
-        let hash = 0;
-        for (let i = 0; i < data.length; i++) {
-          const char = data.charCodeAt(i);
-          hash = ((hash << 5) - hash) + char;
-          hash |= 0;
-        }
-        return hash.toString();
-      }
+      function generateStorageHash() { const data = localStorage.getItem(SAVE_KEY); if (!data) return ''; let hash = 0; for (let i = 0; i < data.length; i++) { const char = data.charCodeAt(i); hash = ((hash << 5) - hash) + char; hash |= 0; } return hash.toString(); }
+      function checkStorageTampering() { const currentHash = generateStorageHash(); if (AC.storageHashCheck && currentHash !== AC.storageHashCheck) { AC.tamperedStorage = true; AC.suspiciousActivity = true; } AC.storageHashCheck = currentHash; }
 
-      function checkStorageTampering() {
-        const currentHash = generateStorageHash();
-        if (AC.storageHashCheck && currentHash !== AC.storageHashCheck) {
-          AC.tamperedStorage = true;
-          AC.suspiciousActivity = true;
-        }
-        AC.storageHashCheck = currentHash;
-      }
-
-      // 🛡️ Tap validation
       function validateTap() {
         const now = Date.now();
-        
-        // Check minimum interval
-        if (now - AC.lastTapTime < AC.minTapInterval) {
-          AC.suspiciousActivity = true;
-          return false;
-        }
-        
-        // Check taps per second
+        if (now - AC.lastTapTime < AC.minTapInterval) { AC.suspiciousActivity = true; return false; }
         AC.tapTimestamps.push(now);
         const oneSecondAgo = now - 1000;
         AC.tapTimestamps = AC.tapTimestamps.filter(t => t > oneSecondAgo);
-        
-        if (AC.tapTimestamps.length > AC.maxTapsPerSecond) {
-          AC.autoClickerDetected = true;
-          AC.suspiciousActivity = true;
-          return false;
-        }
-        
-        // Check taps per window
+        if (AC.tapTimestamps.length > AC.maxTapsPerSecond) { AC.autoClickerDetected = true; AC.suspiciousActivity = true; return false; }
         const windowStart = now - AC.tapWindowMs;
         const tapsInWindow = AC.tapTimestamps.filter(t => t > windowStart).length;
-        if (tapsInWindow > AC.maxTapsPerWindow) {
-          AC.autoClickerDetected = true;
-          AC.suspiciousActivity = true;
-          return false;
-        }
-        
-        AC.lastTapTime = now;
-        AC.totalTaps++;
-        return true;
+        if (tapsInWindow > AC.maxTapsPerWindow) { AC.autoClickerDetected = true; AC.suspiciousActivity = true; return false; }
+        AC.lastTapTime = now; AC.totalTaps++; return true;
       }
 
-      // 🛡️ Spore gain validation
       function validateSporeGain(amount) {
-        const now = Date.now();
-        AC.sporeCheckAmount += amount;
-        
-        if (now - AC.lastSporeCheck >= 1000) {
-          const sporeRate = AC.sporeCheckAmount / ((now - AC.lastSporeCheck) / 1000);
-          if (sporeRate > AC.maxSporesPerSecond) {
-            AC.suspiciousActivity = true;
-            return false;
-          }
-          AC.sporeCheckAmount = 0;
-          AC.lastSporeCheck = now;
-        }
+        const now = Date.now(); AC.sporeCheckAmount += amount;
+        if (now - AC.lastSporeCheck >= 1000) { const sporeRate = AC.sporeCheckAmount / ((now - AC.lastSporeCheck) / 1000); if (sporeRate > AC.maxSporesPerSecond) { AC.suspiciousActivity = true; return false; } AC.sporeCheckAmount = 0; AC.lastSporeCheck = now; }
         return true;
       }
 
-      // 🛡️ Level jump validation
       function validateLevelUp() {
-        const now = Date.now();
-        AC.levelJumpCount++;
-        
-        if (now - AC.lastLevelCheck >= 1000) {
-          const jumpsPerSecond = AC.levelJumpCount / ((now - AC.lastLevelCheck) / 1000);
-          if (jumpsPerSecond > AC.maxLevelJumps) {
-            AC.suspiciousActivity = true;
-            return false;
-          }
-          AC.levelJumpCount = 0;
-          AC.lastLevelCheck = now;
-        }
+        const now = Date.now(); AC.levelJumpCount++;
+        if (now - AC.lastLevelCheck >= 1000) { const jumpsPerSecond = AC.levelJumpCount / ((now - AC.lastLevelCheck) / 1000); if (jumpsPerSecond > AC.maxLevelJumps) { AC.suspiciousActivity = true; return false; } AC.levelJumpCount = 0; AC.lastLevelCheck = now; }
         return true;
       }
 
-      // 🛡️ Human behavior detection
-      function isHumanBehavior(clientX, clientY) {
-        // Bots often click exactly the same position
+      function isHumanBehavior(cx, cy) {
         if (AC.tapTimestamps.length >= 3) {
           const lastThree = AC.tapTimestamps.slice(-3);
-          // Check for consistent intervals (bot pattern)
           const intervals = [];
-          for (let i = 1; i < lastThree.length; i++) {
-            intervals.push(lastThree[i] - lastThree[i-1]);
-          }
+          for (let i = 1; i < lastThree.length; i++) { intervals.push(lastThree[i] - lastThree[i-1]); }
           const allEqual = intervals.every((val, i, arr) => val === arr[0]);
-          if (allEqual && intervals[0] < 200) {
-            AC.autoClickerDetected = true;
-            AC.suspiciousActivity = true;
-            return false;
-          }
+          if (allEqual && intervals[0] < 200) { AC.autoClickerDetected = true; AC.suspiciousActivity = true; return false; }
         }
         return true;
       }
 
-      // 🛡️ Update anti-cheat status display
       function updateAntiCheatStatus() {
         const warning = document.getElementById('antiCheatWarning');
         if (warning) {
-          if (AC.suspiciousActivity) {
-            warning.style.display = 'block';
-            if (AC.autoClickerDetected) warning.textContent = '🛡️ ANTI-CHEAT: Auto-clicker detected! Game restricted.';
-            else if (AC.tamperedStorage) warning.textContent = '🛡️ ANTI-CHEAT: Storage tampering detected! Game restricted.';
-            else if (AC.devToolsDetected) warning.textContent = '🛡️ ANTI-CHEAT: Developer tools detected! Game restricted.';
-            else warning.textContent = '🛡️ ANTI-CHEAT: Suspicious activity detected. Game restricted.';
-          } else {
-            warning.style.display = 'none';
-          }
+          if (AC.suspiciousActivity) { warning.style.display = 'block'; if (AC.autoClickerDetected) warning.textContent = '🛡️ ANTI-CHEAT: Auto-clicker detected!'; else if (AC.tamperedStorage) warning.textContent = '🛡️ ANTI-CHEAT: Storage tampering detected!'; else if (AC.devToolsDetected) warning.textContent = '🛡️ ANTI-CHEAT: Developer tools detected!'; else warning.textContent = '🛡️ ANTI-CHEAT: Suspicious activity detected!'; }
+          else { warning.style.display = 'none'; }
         }
       }
 
-      // 🛡️ Get effective multiplier (reduced if cheating detected)
-      function getEffectiveMult() {
-        if (AC.suspiciousActivity) return 0.1; // 90% reduction if cheating
-        return 1;
-      }
+      function getEffectiveMult() { if (AC.suspiciousActivity) return 0.1; return 1; }
 
-      // 🔄 SUPABASE INTEGRATION
+      // 🔄 SUPABASE FUNCTIONS
       async function updateSupabasePresence() {
         if (!supabase || !playerId) return;
         try {
-          const { error } = await supabase
-            .from('online_players')
-            .upsert({
-              player_id: playerId,
-              wallet_address: userAddress || null,
-              player_name: playerName || null,
-              level: playerLevel,
-              spores: Math.floor(spores),
-              shrooms: shrooms,
-              last_seen: new Date().toISOString()
-            }, { onConflict: 'player_id' });
+          const { error } = await supabase.from('online_players').upsert({
+            player_id: playerId, wallet_address: userAddress || null, player_name: playerName || null,
+            level: playerLevel, spores: Math.floor(spores), shrooms: shrooms,
+            purchased_multiplier: purchasedMultiplier, last_seen: new Date().toISOString()
+          }, { onConflict: 'player_id' });
+          if (!error) { supabaseConnected = true; updateSupabaseStatus(); }
+        } catch(e) {}
+      }
 
-          if (error) console.log('Supabase presence error:', error);
+      async function logAntiCheatViolation(type, details) {
+        if (!supabase || !playerId) return;
+        try {
+          await supabase.from('anti_cheat_logs').insert({
+            player_id: playerId, wallet_address: userAddress || null,
+            violation_type: type, details: details || {}
+          });
+        } catch(e) {}
+      }
+
+      async function recordTransaction(txHash, itemId, itemName, multiplierAmount, priceGBP, polAmount) {
+        if (!supabase || !playerId) return;
+        try {
+          await supabase.from('transactions').insert({
+            player_id: playerId, wallet_address: userAddress, tx_hash: txHash,
+            item_id: itemId, item_name: itemName, multiplier_amount: multiplierAmount,
+            price_gbp: priceGBP, pol_amount: polAmount, status: 'confirmed', confirmed_at: new Date().toISOString()
+          });
         } catch(e) {}
       }
 
       async function fetchSupabaseStats() {
         if (!supabase) return;
         try {
-          // Get online players (active in last 5 minutes)
           const fiveMinAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
-          const { data: online, error: onlineError } = await supabase
-            .from('online_players')
-            .select('player_id', { count: 'exact' })
-            .gte('last_seen', fiveMinAgo);
+          const { data: online, error: onlineError } = await supabase.from('online_players').select('player_id', { count: 'exact' }).gte('last_seen', fiveMinAgo);
+          if (!onlineError && online) { onlinePlayers = online.length || 0; }
+          const { count, error: countError } = await supabase.from('online_players').select('*', { count: 'exact', head: true });
+          if (!countError && count !== null) { totalPlayers = count; }
+          supabaseConnected = true; updateSupabaseStatus();
+        } catch(e) { supabaseConnected = false; updateSupabaseStatus(); }
+      }
 
-          if (!onlineError && online) {
-            onlinePlayers = online.length || 0;
-          }
-
-          // Get total players
-          const { count, error: countError } = await supabase
-            .from('online_players')
-            .select('*', { count: 'exact', head: true });
-
-          if (!countError && count !== null) {
-            totalPlayers = count;
+      async function fetchServerLeaderboard() {
+        if (!supabase) return;
+        try {
+          const { data, error } = await supabase.from('leaderboard').select('*').order('level', { ascending: false }).order('shrooms', { ascending: false }).order('spores', { ascending: false }).limit(25);
+          if (!error && data) {
+            leaderboardData = data.map(p => ({ id: p.player_id, name: p.player_name, level: p.level, shrooms: p.shrooms, spores: p.spores, isBot: false, lastUpdated: p.last_updated }));
+            saveLeaderboard();
           }
         } catch(e) {}
+      }
+
+      function updateSupabaseStatus() {
+        const statusEl = document.getElementById('supabaseStatus');
+        if (statusEl) {
+          if (supabaseConnected) { statusEl.textContent = '🟢 Supabase Connected · Live Stats'; statusEl.className = 'supabase-status supabase-connected'; }
+          else if (supabase) { statusEl.textContent = '🟡 Supabase Connecting...'; statusEl.className = 'supabase-status'; }
+          else { statusEl.textContent = '🔴 Supabase Offline · Local Mode'; statusEl.className = 'supabase-status'; }
+        }
       }
 
       function saveWalletState() { if(userAddress) try { localStorage.setItem(WALLET_STORAGE_KEY,JSON.stringify({address:userAddress.toLowerCase(),name:playerName,timestamp:Date.now()})); } catch(e) {} }
@@ -479,48 +396,25 @@
       function getStoredWalletState() { try { const r=localStorage.getItem(WALLET_STORAGE_KEY); if(!r) return null; const d=JSON.parse(r); if(Date.now()-d.timestamp>30*24*60*60*1000){clearWalletState();return null;} return d; } catch(e) { return null; } }
 
       const el=(id)=>document.getElementById(id);
-      const getMult=()=>{
-        const baseMult = 1 + shrooms + purchasedMultiplier;
-        return baseMult * getEffectiveMult();
-      };
+      const getMult=()=>{ const baseMult = 1 + shrooms + purchasedMultiplier; return baseMult * getEffectiveMult(); };
       const getPerTapAmount=()=>(perClick*getMult())*(boosterActive?5:1);
       const getCryptoConversion=(gbp)=>({pol:(gbp/POL_PRICE_GBP).toFixed(2),polPriceGBP:POL_PRICE_GBP.toFixed(2),polPriceUSD:POL_PRICE_USD.toFixed(2)});
 
-      function addExperience(amt){
-        if (AC.suspiciousActivity) amt *= 0.1;
-        currentExp+=amt;
-        let n=expToNextLevel();
-        while(currentExp>=n){
-          if (!validateLevelUp()) break;
-          currentExp-=n; playerLevel++; n=expToNextLevel();
-          addChatMessage(playerName||'Player',`reached Level ${playerLevel} - ${getLevelTitle()}!`,'levelup');
-        }
-        updateLevelDisplay();
-      }
+      function addExperience(amt){ if(AC.suspiciousActivity) amt *= 0.1; currentExp+=amt; let n=expToNextLevel(); while(currentExp>=n){ if(!validateLevelUp()) break; currentExp-=n; playerLevel++; n=expToNextLevel(); addChatMessage(playerName||'Player',`reached Level ${playerLevel} - ${getLevelTitle()}!`,'levelup'); } updateLevelDisplay(); }
       function getLevelTitle(){return levelTitles[Math.min(playerLevel-1,levelTitles.length-1)];}
       function updateLevelDisplay(){const n=expToNextLevel(),p=Math.min(100,(currentExp/n)*100);el('levelDisplay').innerText=playerLevel;el('levelTitle').innerText=getLevelTitle();el('expFill').style.width=p+'%';el('currentExpText').innerText=Math.floor(currentExp)+' XP';el('nextExpText').innerText=n+' XP';}
 
       function initLeaderboard(){const s=localStorage.getItem(LEADERBOARD_KEY);leaderboardData=s?JSON.parse(s).filter(p=>!p.isBot):[];saveLeaderboard();}
       function saveLeaderboard(){try{localStorage.setItem(LEADERBOARD_KEY,JSON.stringify(leaderboardData));}catch(e){}}
       function updatePlayerOnLeaderboard(){const dn=playerName||(userAddress?`${userAddress.substring(0,6)}...`:'Anon');leaderboardData=leaderboardData.filter(p=>p.id!==playerId);if(dn)leaderboardData.push({id:playerId,name:dn,level:playerLevel,shrooms,spores:Math.floor(spores),lastUpdated:Date.now()});leaderboardData.sort((a,b)=>b.level-a.level||b.shrooms-a.shrooms||b.spores-a.spores);if(leaderboardData.length>50)leaderboardData=leaderboardData.slice(0,50);saveLeaderboard();}
-      function renderLeaderboard(){const p=el('leaderboard');if(!p||!p.classList.contains('active'))return;let h=`<div class="leaderboard-container"><div class="leaderboard-header">🌐 COSMIC LEADERBOARD 🌐</div><div class="leaderboard-subtitle">🏆 Top Shroomers</div>`;if(!leaderboardData.length)h+=`<div style="text-align:center;padding:20px;color:#ffb3ff;">🍄 No players yet!</div>`;else{h+=`<table class="leaderboard-table"><thead><tr><th class="col-rank">#</th><th class="col-name">Player</th><th class="col-level">Lvl</th><th class="col-shrooms">🍄</th><th class="col-spores">✨ Spores</th></tr></thead><tbody>`;leaderboardData.slice(0,25).forEach((pl,i)=>{const rk=i+1,rc=rk===1?'rank-1':rk===2?'rank-2':rk===3?'rank-3':'';const im=pl.id===playerId;const fs=pl.spores>=1e6?(pl.spores/1e6).toFixed(1)+'M':pl.spores>=1e3?(pl.spores/1e3).toFixed(1)+'K':pl.spores.toString();h+=`<tr class="${im?'player-row':''}"><td class="col-rank"><span class="rank-badge ${rc}">${rk}</span></td><td class="col-name">${pl.name} ${im?'👈':''}</td><td class="col-level">⭐${pl.level}</td><td class="col-shrooms">🍄${pl.shrooms}</td><td class="col-spores">${fs}</td></tr>`;});h+=`</tbody></table>`;}h+=`<div class="leaderboard-refresh">🔄 ${leaderboardData.length} players ranked</div></div>`;p.innerHTML=h;}
+      function renderLeaderboard(){const p=el('leaderboard');if(!p||!p.classList.contains('active'))return;let h=`<div class="leaderboard-container"><div class="leaderboard-header">🌐 COSMIC LEADERBOARD 🌐</div><div class="leaderboard-subtitle">🏆 Top Shroomers ${supabaseConnected?'· Live':''}</div>`;if(!leaderboardData.length)h+=`<div style="text-align:center;padding:20px;color:#ffb3ff;">🍄 No players yet!</div>`;else{h+=`<table class="leaderboard-table"><thead><tr><th class="col-rank">#</th><th class="col-name">Player</th><th class="col-level">Lvl</th><th class="col-shrooms">🍄</th><th class="col-spores">✨ Spores</th></tr></thead><tbody>`;leaderboardData.slice(0,25).forEach((pl,i)=>{const rk=i+1,rc=rk===1?'rank-1':rk===2?'rank-2':rk===3?'rank-3':'';const im=pl.id===playerId;const fs=pl.spores>=1e6?(pl.spores/1e6).toFixed(1)+'M':pl.spores>=1e3?(pl.spores/1e3).toFixed(1)+'K':pl.spores.toString();h+=`<tr class="${im?'player-row':''}"><td class="col-rank"><span class="rank-badge ${rc}">${rk}</span></td><td class="col-name">${pl.name} ${im?'👈':''}</td><td class="col-level">⭐${pl.level}</td><td class="col-shrooms">🍄${pl.shrooms}</td><td class="col-spores">${fs}</td></tr>`;});h+=`</tbody></table>`;}h+=`<div class="leaderboard-refresh">🔄 ${leaderboardData.length} players ranked</div></div>`;p.innerHTML=h;}
 
-      function initPlayerTracking(){
-        playerId=localStorage.getItem(PLAYER_ID_KEY)||('player_'+Date.now()+'_'+Math.random().toString(36).substr(2,9));
-        localStorage.setItem(PLAYER_ID_KEY,playerId);
-        totalPlayers=parseInt(localStorage.getItem(TOTAL_PLAYERS_KEY))||1;
-        if(!sessionStorage.getItem('trippyShroomz_visited')){totalPlayers++;localStorage.setItem(TOTAL_PLAYERS_KEY,totalPlayers.toString());sessionStorage.setItem('trippyShroomz_visited','true');}
-        updateOnlinePlayers(); setInterval(updateOnlinePlayers,30000);
-        initLeaderboard(); setInterval(()=>{updatePlayerOnLeaderboard();renderLeaderboard();},30000);
-      }
+      function initPlayerTracking(){playerId=localStorage.getItem(PLAYER_ID_KEY)||('player_'+Date.now()+'_'+Math.random().toString(36).substr(2,9));localStorage.setItem(PLAYER_ID_KEY,playerId);totalPlayers=parseInt(localStorage.getItem(TOTAL_PLAYERS_KEY))||1;if(!sessionStorage.getItem('trippyShroomz_visited')){totalPlayers++;localStorage.setItem(TOTAL_PLAYERS_KEY,totalPlayers.toString());sessionStorage.setItem('trippyShroomz_visited','true');}updateOnlinePlayers();setInterval(updateOnlinePlayers,30000);initLeaderboard();setInterval(()=>{updatePlayerOnLeaderboard();renderLeaderboard();if(supabase)fetchServerLeaderboard();},30000);}
 
       async function updateOnlinePlayers(){
-        if (supabase) {
-          await fetchSupabaseStats();
-          if (playerId) await updateSupabasePresence();
-        } else {
-          onlinePlayers = Math.max(1, leaderboardData.length||1);
-        }
+        if(supabase){await fetchSupabaseStats();if(playerId)await updateSupabasePresence();}
+        else{onlinePlayers=Math.max(1,leaderboardData.length||1);}
+        const statsEl=document.getElementById('serverStatsText');if(statsEl)statsEl.innerText=`🌍 Online: ${onlinePlayers} | 👥 Total: ${totalPlayers.toLocaleString()}`;
         if(el('chatOnlineCount'))el('chatOnlineCount').innerText=`${onlinePlayers} online`;
       }
 
@@ -530,23 +424,20 @@
         if(AC.suspiciousActivity){alert('Account restricted due to suspicious activity.');return;}
         if(!signer){alert('Connect wallet first!');return;}
         if(!isPolygonNetwork){if(!await switchToPolygonNetwork())return;await silentReconnect();if(!isPolygonNetwork){alert('Switch to Polygon Mainnet.');return;}}
-        const conv=getCryptoConversion(priceGBP); const polAmt=ethers.utils.parseEther(conv.pol);
-        const btn=document.getElementById(btnId); if(btn){btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span> Processing...';}
-        try{
-          const tx=await signer.sendTransaction({to:PAYMENT_ADDRESS,value:polAmt,chainId:POLYGON_CHAIN_ID}); await tx.wait();
-          purchasedMultiplier+=multAmt; updateBalance(); saveGame(); render(); renderShop();
+        const conv=getCryptoConversion(priceGBP);const polAmt=ethers.utils.parseEther(conv.pol);
+        const btn=document.getElementById(btnId);if(btn){btn.disabled=true;btn.innerHTML='<span class="loading-spinner"></span> Processing...';}
+        try{const tx=await signer.sendTransaction({to:PAYMENT_ADDRESS,value:polAmt,chainId:POLYGON_CHAIN_ID});await tx.wait();
+          purchasedMultiplier+=multAmt;updateBalance();saveGame();render();renderShop();
+          if(supabase)await recordTransaction(tx.hash,`multiplier_x${multAmt}`,`x${multAmt} Multiplier`,multAmt,priceGBP,parseFloat(conv.pol));
           addChatMessage(playerName||'Player',`purchased x${multAmt} Permanent Multiplier! 🚀`,'levelup');
           if(btn){btn.innerHTML='✅ Purchased!';setTimeout(()=>{btn.innerHTML=`💎 Buy x${multAmt} · £${priceGBP.toFixed(2)}`;btn.disabled=false;},3000);}
         }catch(e){alert(e.code==='INSUFFICIENT_FUNDS'?'Insufficient POL balance.':'Transaction failed.');if(btn){btn.disabled=false;btn.innerHTML=`💎 Buy x${multAmt} · £${priceGBP.toFixed(2)}`;}}
       }
 
-      function renderShop(){const p=el('shop');if(!p||!p.classList.contains('active'))return;let h=`<div style="font-size:20px;text-align:center;margin-bottom:15px;">🛸 COSMIC SHOP 🛸</div><div class="network-notice">⛓️ Polygon Mainnet (POL) · 1 POL = £${POL_PRICE_GBP.toFixed(2)} GBP · Anti-cheat active</div>`;shopItems.forEach((item,i)=>{const conv=getCryptoConversion(item.priceGBP);const btnId=`buyBtn_${item.id}`;let tc='',bc='';if(item.tier==='premium'){tc=' premium';bc=' premium-btn';}else if(item.tier==='ultimate'){tc=' ultimate';bc=' ultimate-btn';}let badge='';if(i===1)badge='<span class="best-value">BEST VALUE</span>';else if(i===2)badge='<span class="best-value">MAX POWER</span>';h+=`<div class="shop-item${tc}"><div class="shop-item-title">💎 ${item.name}${badge}</div><div class="shop-item-description">Permanent ${item.multiplier}x spore boost!</div><div class="price-display">💷 £${item.priceGBP.toFixed(2)} GBP</div><div class="crypto-conversion"><div>🔮 POL Conversion:</div><div style="margin-top:3px;"><span>🟣 <span class="crypto-amount">${conv.pol} POL</span></span></div><div style="font-size:9px;color:#6a6;margin-top:3px;">1 POL = £${conv.polPriceGBP} (≈ $${conv.polPriceUSD})</div></div><button class="purchase-btn${bc}" id="${btnId}" onclick="window.purchaseMultiplier(${item.multiplier},${item.priceGBP},'${btnId}')" ${!isPolygonNetwork||!signer||AC.suspiciousActivity?'disabled':''}>${AC.suspiciousActivity?'🚫 Restricted':isPolygonNetwork&&signer?`💎 Buy x${item.multiplier} · ${conv.pol} POL`:'🔌 Connect Polygon Wallet'}</button></div>`;});h+=`<div style="text-align:center;margin-top:10px;font-size:14px;color:#ffb3ff;">Current Multiplier: x${getMult().toFixed(1)}${purchasedMultiplier>0?` <span class="owned-badge">+${purchasedMultiplier}x shop</span>`:''}</div>`;p.innerHTML=h;}
+      function renderShop(){const p=el('shop');if(!p||!p.classList.contains('active'))return;let h=`<div style="font-size:20px;text-align:center;margin-bottom:15px;">🛸 COSMIC SHOP 🛸</div><div class="network-notice">⛓️ Polygon Mainnet (POL) · 1 POL = £${POL_PRICE_GBP.toFixed(2)} GBP · Live Stats via Supabase</div>`;shopItems.forEach((item,i)=>{const conv=getCryptoConversion(item.priceGBP);const btnId=`buyBtn_${item.id}`;let tc='',bc='';if(item.tier==='premium'){tc=' premium';bc=' premium-btn';}else if(item.tier==='ultimate'){tc=' ultimate';bc=' ultimate-btn';}let badge='';if(i===1)badge='<span class="best-value">BEST VALUE</span>';else if(i===2)badge='<span class="best-value">MAX POWER</span>';h+=`<div class="shop-item${tc}"><div class="shop-item-title">💎 ${item.name}${badge}</div><div class="shop-item-description">Permanent ${item.multiplier}x spore boost!</div><div class="price-display">💷 £${item.priceGBP.toFixed(2)} GBP</div><div class="crypto-conversion"><div>🔮 POL Conversion:</div><div style="margin-top:3px;"><span>🟣 <span class="crypto-amount">${conv.pol} POL</span></span></div><div style="font-size:9px;color:#6a6;margin-top:3px;">1 POL = £${conv.polPriceGBP} (≈ $${conv.polPriceUSD})</div></div><button class="purchase-btn${bc}" id="${btnId}" onclick="window.purchaseMultiplier(${item.multiplier},${item.priceGBP},'${btnId}')" ${!isPolygonNetwork||!signer||AC.suspiciousActivity?'disabled':''}>${AC.suspiciousActivity?'🚫 Restricted':isPolygonNetwork&&signer?`💎 Buy x${item.multiplier} · ${conv.pol} POL`:'🔌 Connect Polygon Wallet'}</button></div>`;});h+=`<div style="text-align:center;margin-top:10px;font-size:14px;color:#ffb3ff;">Current Multiplier: x${getMult().toFixed(1)}${purchasedMultiplier>0?` <span class="owned-badge">+${purchasedMultiplier}x shop</span>`:''}</div>`;p.innerHTML=h;}
 
       let chatMessages=[];
-      function addChatMessage(user,text,type){
-        if (AC.suspiciousActivity) return;
-        chatMessages.push({user,text,type:type||'message',timestamp:Date.now()}); if(chatMessages.length>50)chatMessages.shift(); renderChat();
-      }
+      function addChatMessage(user,text,type){if(AC.suspiciousActivity)return;chatMessages.push({user,text,type:type||'message',timestamp:Date.now()});if(chatMessages.length>50)chatMessages.shift();renderChat();}
       function renderChat(){const mc=el('chatMessages');if(!mc)return;let h='';chatMessages.slice(-15).reverse().forEach(m=>{const ts=new Date(m.timestamp).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});if(m.type==='join')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>🍄 <span class="chat-user">${m.user}</span> joined!</div>`;else if(m.type==='return')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>✨ <span class="chat-user">${m.user}</span> returned!</div>`;else if(m.type==='namechange')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>🔄 ${m.text}</div>`;else if(m.type==='levelup')h+=`<div class="chat-message chat-join"><span class="chat-time">${ts}</span>⭐ <span class="chat-user">${m.user}</span> ${m.text}</div>`;else h+=`<div class="chat-message"><span class="chat-time">${ts}</span><span class="chat-user">${m.user}:</span> ${m.text}</div>`;});mc.innerHTML=h||'<div style="color:#6a6;">✨ chat quiet...</div>';}
 
       async function silentReconnect(){const et=window.ethereum;if(!et)return false;try{const accounts=await et.request({method:'eth_accounts'});if(!accounts||accounts.length===0)return false;userAddress=accounts[0];provider=new ethers.providers.Web3Provider(et);signer=provider.getSigner();const net=await provider.getNetwork();isPolygonNetwork=(net.chainId===POLYGON_CHAIN_ID);updateNetworkBadge();await updateBalance();el('walletAddress').textContent=`${userAddress.substring(0,6)}...${userAddress.substring(38)}`;el('walletInfo').style.display='flex';el('connectWalletBtn').textContent=isPolygonNetwork?'✅ Connected':'⚠️ Switch';saveWalletState();if(!hasSetName)loadUsername();render();renderShop();setupWalletListeners(et);return true;}catch(e){return false;}}
@@ -568,31 +459,26 @@
 
       async function updateBalance(){if(provider&&userAddress)try{const b=await provider.getBalance(userAddress);polBalance=ethers.utils.formatEther(b);el('maticBalance').textContent=`${parseFloat(polBalance).toFixed(2)} POL`;}catch(e){}}
 
-      const SAVE_KEY='trippyShroomzSave_v23_ac';
+      const SAVE_KEY='trippyShroomzSave_v24_sb';
       function saveGame(){try{const data={spores,shrooms,perClick,autoRate,shroomCost,upgrades:{click:{cost:upgrades.click.cost,owned:upgrades.click.owned},auto:{cost:upgrades.auto.cost,owned:upgrades.auto.owned}},playerLevel,currentExp,purchasedMultiplier};localStorage.setItem(SAVE_KEY,JSON.stringify(data));AC.storageHashCheck=generateStorageHash();}catch(e){}}
       function loadGame(){try{const s=localStorage.getItem(SAVE_KEY);if(!s)return false;const d=JSON.parse(s);spores=d.spores??0;shrooms=d.shrooms??0;perClick=d.perClick??1;autoRate=d.autoRate??0;shroomCost=d.shroomCost??100000;if(d.upgrades?.click){upgrades.click.cost=d.upgrades.click.cost;upgrades.click.owned=d.upgrades.click.owned;}if(d.upgrades?.auto){upgrades.auto.cost=d.upgrades.auto.cost;upgrades.auto.owned=d.upgrades.auto.owned;}playerLevel=d.playerLevel||1;currentExp=d.currentExp||0;purchasedMultiplier=d.purchasedMultiplier||0;AC.storageHashCheck=generateStorageHash();return true;}catch(e){return false;}}
 
-      function gainSpores(){
-        const a=getPerTapAmount();
-        if (!validateSporeGain(a)) return 0;
-        spores+=a; addExperience(a*0.8); return a;
-      }
+      function gainSpores(){const a=getPerTapAmount();if(!validateSporeGain(a))return 0;spores+=a;addExperience(a*0.8);return a;}
       function showTapEffect(amt,cx,cy){const f=document.createElement('div');f.className='tap-float'+(boosterActive?' booster-active':'');f.textContent=`+${amt.toFixed(1)}`;f.style.left=cx+'px';f.style.top=cy+'px';document.body.appendChild(f);const b=document.createElement('div');b.className='tap-burst'+(boosterActive?' booster-active':'');b.style.left=cx+'px';b.style.top=cy+'px';document.body.appendChild(b);setTimeout(()=>{f.remove();b.remove();},800);}
       function spawnFallingSpore(){if(!boosterActive||AC.suspiciousActivity)return;const ex=document.querySelectorAll('.falling-spore-img');if(ex.length>=MAX_FALLING_SPORES)ex[0].remove();const s=document.createElement('div');s.className='falling-spore-img';s.style.left=Math.random()*(window.innerWidth-50)+'px';s.style.top='-50px';const img=document.createElement('img');img.src=MUSHROOM_IMAGE_URL;s.appendChild(img);document.body.appendChild(s);setTimeout(()=>s.remove(),5000);}
       function startFallingSpores(){if(fallingSporesInterval)return;spawnFallingSpore();fallingSporesInterval=setInterval(()=>{if(boosterActive&&!AC.suspiciousActivity)spawnFallingSpore();},1800);}
       function stopFallingSpores(){if(fallingSporesInterval){clearInterval(fallingSporesInterval);fallingSporesInterval=null;}document.querySelectorAll('.falling-spore-img').forEach(s=>s.remove());}
 
       function processTap(e){
-        if (AC.suspiciousActivity) return;
-        const now=Date.now(); if(now-AC.lastTapTime<AC.minTapInterval)return;
-        let cx,cy; if(e.touches){cx=e.touches[0].clientX;cy=e.touches[0].clientY;}else if(e.changedTouches){cx=e.changedTouches[0].clientX;cy=e.changedTouches[0].clientY;}else{cx=e.clientX;cy=e.clientY;}
-        if(!validateTap()){updateAntiCheatStatus();return;}
-        if(!isHumanBehavior(cx,cy)){updateAntiCheatStatus();return;}
+        if(AC.suspiciousActivity)return;
+        const now=Date.now();if(now-AC.lastTapTime<AC.minTapInterval)return;
+        let cx,cy;if(e.touches){cx=e.touches[0].clientX;cy=e.touches[0].clientY;}else if(e.changedTouches){cx=e.changedTouches[0].clientX;cy=e.changedTouches[0].clientY;}else{cx=e.clientX;cy=e.clientY;}
+        if(!validateTap()){if(AC.suspiciousActivity&&supabase)logAntiCheatViolation('auto_clicker',{tapCount:AC.tapTimestamps.length});updateAntiCheatStatus();return;}
+        if(!isHumanBehavior(cx,cy)){if(AC.suspiciousActivity&&supabase)logAntiCheatViolation('bot_pattern',{});updateAntiCheatStatus();return;}
         if(boosterActive)boosterEndTime=Date.now()+BOOSTER_DURATION;
         else{boosterClicks=Math.min(boosterClicks+1,BOOSTER_REQUIRED);if(boosterClicks>=BOOSTER_REQUIRED){boosterActive=true;boosterClicks=0;boosterEndTime=Date.now()+BOOSTER_DURATION;startFallingSpores();}}
-        const amt=gainSpores(); if(amt>0){showTapEffect(amt,cx,cy);saveGame();render();}
-        updateAntiCheatStatus();
-        checkStorageTampering();
+        const amt=gainSpores();if(amt>0){showTapEffect(amt,cx,cy);saveGame();render();}
+        updateAntiCheatStatus();checkStorageTampering();
       }
 
       document.getElementById('character').addEventListener('pointerdown',(e)=>{e.preventDefault();processTap(e);});
@@ -601,9 +487,8 @@
       setInterval(()=>{
         if(boosterActive&&Date.now()>boosterEndTime){boosterActive=false;boosterEndTime=0;boosterClicks=0;stopFallingSpores();}
         if(autoRate>0&&!AC.suspiciousActivity){const ag=autoRate*getMult()*(boosterActive?5:1);if(validateSporeGain(ag)){spores+=ag;addExperience(ag*0.5);saveGame();}}
-        checkStorageTampering();
-        updateAntiCheatStatus();
-        if (supabase && playerId) updateSupabasePresence();
+        checkStorageTampering();updateAntiCheatStatus();
+        if(supabase&&playerId)updateSupabasePresence();
         render();
       },1000);
 
@@ -613,7 +498,7 @@
 
       function render(){
         el('spores').innerText=`✨ Spores: ${Math.floor(spores)}`;el('shrooms').innerText=`🍄 Shrooms: ${shrooms}`;
-        el('serverStats').innerText=`🌍 Online: ${onlinePlayers}  |  👥 Total: ${totalPlayers.toLocaleString()}`;
+        const statsEl=document.getElementById('serverStatsText');if(statsEl)statsEl.innerText=`🌍 Online: ${onlinePlayers} | 👥 Total: ${totalPlayers.toLocaleString()}`;
         el('perTapDisplay').innerHTML=`✨ per tap: ${getPerTapAmount().toFixed(1)} ${boosterActive?'🔥 x5':''}${AC.suspiciousActivity?' ⚠️':''}`;
         let bh='';if(boosterActive){const r=Math.max(0,Math.ceil((boosterEndTime-Date.now())/1000));bh=`<div style="text-align:center;"><div class="booster-timer">⏳ ${r}s</div><div style="font-size:14px;color:#ffb3ff;">⚡ x5 ACTIVE ⚡</div><div class="progress-bar-container"><div class="progress-fill" style="width:100%;"></div></div></div>`;}else{const p=(boosterClicks/BOOSTER_REQUIRED)*100;bh=`<div class="click-counter">🍄 ${boosterClicks}/${BOOSTER_REQUIRED}</div><div class="progress-bar-container"><div class="progress-fill" style="width:${p}%;"></div></div><div style="font-size:13px;">tap 50x for 15s x5 boost</div>`;}el('boosterContent').innerHTML=bh;
         el('profile').innerHTML=`<div style="font-size:20px;">🌀 TRIP STATS</div>${playerName?`<div style="font-size:18px;color:#ffb3ff;">🧑‍🚀 ${playerName}</div>`:''}<div>⭐ Level ${playerLevel} · ${getLevelTitle()}</div><div>⚡ Spores/sec: ${(autoRate*getMult()*(boosterActive?5:1)).toFixed(2)}</div><div>👆 Click: ${perClick} | ✨ Multi: x${getMult().toFixed(1)}</div>${purchasedMultiplier>0?`<div style="color:#ffdd00;font-size:12px;">💎 Shop Bonus: +${purchasedMultiplier}x</div>`:''}${AC.suspiciousActivity?`<div style="color:#ff4444;font-size:12px;">⚠️ Game restricted - 90% penalty</div>`:''}${playerName?`<div class="change-name-link" onclick="window.changePlayerName()">✏️ Change name</div>`:''}`;
@@ -629,10 +514,15 @@
       el('chatInput').addEventListener('keypress',(e)=>{if(e.key==='Enter')el('sendChatBtn').click();});
       el('saveUsernameBtn').addEventListener('click',()=>setPlayerName(el('usernameInput').value));
       el('usernameInput').addEventListener('keypress',(e)=>{if(e.key==='Enter')el('saveUsernameBtn').click();});
-      document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');const pid=t.dataset.tab;document.getElementById(pid).classList.add('active');if(pid==='leaderboard')renderLeaderboard();else if(pid==='shop')renderShop();});});
+      document.querySelectorAll('.tab').forEach(t=>{t.addEventListener('click',()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.panel').forEach(x=>x.classList.remove('active'));t.classList.add('active');const pid=t.dataset.tab;document.getElementById(pid).classList.add('active');if(pid==='leaderboard'){renderLeaderboard();if(supabase)fetchServerLeaderboard();}else if(pid==='shop')renderShop();});});
 
       if(!loadGame()){spores=0;shrooms=0;perClick=1;autoRate=0;shroomCost=100000;upgrades.click.cost=20;upgrades.click.owned=0;upgrades.auto.cost=50;upgrades.auto.owned=0;playerLevel=1;currentExp=0;purchasedMultiplier=0;}
       initPlayerTracking();updateLevelDisplay();updatePlayerOnLeaderboard();render();renderChat();saveGame();
+
+      // Retry Supabase init if library loaded late
+      if (!supabase && typeof window.supabase !== 'undefined') {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      }
 
       async function attemptAutoReconnect(maxRetries=8,baseDelay=500){const et=window.ethereum;if(!et)return;const stored=getStoredWalletState();if(!stored)return;for(let i=0;i<maxRetries;i++){const delay=baseDelay*(i+1);const success=await silentReconnect();if(success){if(userAddress&&!hasSetName){if(!loadUsername()&&!stored.name){setTimeout(()=>{el('usernameModal').style.display='flex';},600);}}return;}await new Promise(r=>setTimeout(r,delay));}}
 
@@ -644,6 +534,15 @@
       setInterval(saveGame,5000);
       setInterval(checkStorageTampering,10000);
       window.addEventListener('beforeunload',()=>{saveGame();saveWalletState();});
+
+      // Initial Supabase connection
+      updateSupabaseStatus();
+      if (supabase) {
+        fetchSupabaseStats().then(() => {
+          updateOnlinePlayers();
+          fetchServerLeaderboard();
+        });
+      }
     }
   </script>
 </body>
